@@ -178,6 +178,19 @@ The suite turns the out-of-sight rule off, and says so: there is no level in it 
 hidden behind, so every point is visible from everywhere and leaving it on would test
 the raycast rather than the pacing.
 
+## A 2D game drives this unchanged
+
+Everything here — the stress, the phase, the population target, the travel estimate, the
+scoring of a spawn point — is arithmetic on points in dot-npc's own plane, and dot-npc's
+plane is XZ with a vertical that a 2D world never moves. So the only line that had to know
+which dimension it was in was the one that actually spawns something, and it asks the
+spawner: `DotNpcSpawner.two_dimensional` routes it through `spawn_2d`.
+
+That is deliberately one branch in one function rather than a flag on this class. A
+director serves a spawner and a spawner serves a world; asking the thing that knows is
+cheaper than keeping a second copy of the answer, and this family's most repeated bug is
+two copies of one list.
+
 ## Where a game plugs in
 
 | To change | Where |

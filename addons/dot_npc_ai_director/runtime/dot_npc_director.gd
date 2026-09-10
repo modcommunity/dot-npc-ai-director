@@ -410,7 +410,18 @@ func _spawn_toward_target() -> void:
 		# conclude the director is broken.
 		var kind := population[(_total_spawns + i) % population.size()]
 
-		if spawner.spawn(kind, at, &"director") != null:
+		# [b]The spawner says which dimension its world is, and this is the only place the
+		# director cares.[/b] Everything above — the stress, the phase, the population
+		# target, the scoring of a spawn point — is arithmetic on points in dot-npc's own
+		# plane and is identical either way. A 2D game forking this file to change one
+		# call would be forking the whole director to avoid a `Vector3`.
+		var made: DotNpcInstance = (
+			spawner.spawn_2d(kind, DotNpcInstance.from_plane(at), &"director")
+			if spawner.two_dimensional
+			else spawner.spawn(kind, at, &"director")
+		)
+
+		if made != null:
 			placed += 1
 
 	if placed <= 0:
