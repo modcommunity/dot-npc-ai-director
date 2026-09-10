@@ -109,6 +109,64 @@ var spawn_count: int = 0
 var refused_placements: int = 0
 
 
+## Fills [member spawn_points] from a map's navigation, thinned.
+##
+## The convenience the field's own documentation has always pointed at: a navigable
+## point is the reasonable default and every game was writing this loop. Still an
+## explicit call rather than something the director does on its own, because which
+## points are [i]legal[/i] spawns is a level design question and a game that wants
+## better still passes better.
+##
+## [b][param minimum_spacing] is not a nicety.[/b] [method choose_spawn_point] walks
+## every candidate and, for each one inside the distance band, asks whether a player
+## can see it — which is a raycast. A two-metre grid over a modest map is a few
+## thousand points, so an unthinned list is a few thousand raycasts per wave, several
+## times a minute, on the server. Eight metres is about a room.
+##
+## [param filter] excludes what the map says an NPC should not be standing on:
+## `DotNpcNavFilter.walking_only()` keeps a horde out of the crouch tunnels, and a
+## filter with `exclude_flags` set to `AVOID` keeps it off the ledges.
+##
+## Returns how many points were kept.
+func set_spawn_points_from_nav(
+	nav: DotNpcNavData,
+	minimum_spacing: float = 8.0,
+	filter: DotNpcNavFilter = null
+) -> int:
+	spawn_points = PackedVector3Array()
+
+	if nav == null or nav.points.is_empty():
+		return 0
+
+	var spacing_sq := minimum_spacing * minimum_spacing
+
+	for i in nav.points.size():
+		if filter != null and not filter.passes(nav.area_of(i), nav.flags_of(i)):
+			continue
+
+		var point := nav.points[i]
+		var too_close := false
+
+		for kept in spawn_points:
+			if kept.distance_squared_to(point) < spacing_sq:
+				too_close = true
+				break
+
+		if too_close:
+			continue
+
+		spawn_points.append(point)
+
+	DotLog.info(CHANNEL, "spawn points taken from navigation", {
+		"map": String(nav.map_id),
+		"points": nav.points.size(),
+		"kept": spawn_points.size(),
+		"spacing": minimum_spacing,
+	})
+
+	return spawn_points.size()
+
+
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return

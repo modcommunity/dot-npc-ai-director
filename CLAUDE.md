@@ -99,6 +99,24 @@ spawn: a game wants its horde coming out of the dark corridor rather than out of
 safe room, and only the map knows which is which. `DotNpcNavData.points` is a reasonable
 default and a game that wants better passes better.
 
+### Spawn points can now come from the navigation
+
+The field's own documentation has always said `DotNpcNavData.points` is the reasonable
+default, and every game was writing the loop.
+`DotNpcDirector.set_spawn_points_from_nav` is that loop, still as an explicit call —
+which points are *legal* spawns is a level design question, and a game that wants
+better still passes better.
+
+**The thinning is not a nicety.** `choose_spawn_point` walks every candidate and, for
+each one inside the distance band, asks whether a player can see it — which is a
+raycast. A two-metre grid over a modest map is a few thousand points, so an unthinned
+list is a few thousand raycasts per wave, several times a minute, on the server. Eight
+metres between kept points is about a room.
+
+It takes a `DotNpcNavFilter` for the same reason a path does:
+`DotNpcNavFilter.walking_only()` keeps a horde out of the crouch tunnels it cannot use,
+and one excluding `AVOID` keeps it off the ledges.
+
 ## Reclaiming is along the route, not by distance
 
 Distance alone reclaims the wave waiting in the room the party is about to walk into,
@@ -154,7 +172,7 @@ find . -name '*.gd' -not -path './.godot/*' -not -path './addons/dot_core/*' \
 timeout 120 godot --headless --path . res://examples/director_selftest.tscn
 ```
 
-45 checks. Exits non-zero on failure.
+52 checks. Exits non-zero on failure.
 
 The suite turns the out-of-sight rule off, and says so: there is no level in it to be
 hidden behind, so every point is visible from everywhere and leaving it on would test
@@ -164,6 +182,7 @@ the raycast rather than the pacing.
 
 | To change | Where |
 | --- | --- |
+| Where a wave may appear | `DotNpcDirector.spawn_points`, or `set_spawn_points_from_nav` |
 | Every number the director has an opinion about | `DotNpcDirectorRules`, layered like every `DotConfig` |
 | What may be spawned, and in what proportion | `DotNpcDirector.population` |
 | Where things may appear | `DotNpcDirector.spawn_points` |

@@ -69,7 +69,7 @@ godot --headless --path . --import
 timeout 120 godot --headless --path . res://examples/director_selftest.tscn
 ```
 
-45 checks, exits non-zero on failure.
+52 checks, exits non-zero on failure.
 
 ## Licence
 

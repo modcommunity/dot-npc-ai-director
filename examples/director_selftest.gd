@@ -41,6 +41,7 @@ func _run() -> void:
 	_test_cycle()
 	_test_relax_needs_both()
 	_test_relax_breaks_on_disaster()
+	_test_spawn_points_from_nav()
 	_test_placement_distance()
 	_test_placement_ahead()
 	_test_placement_refuses()
@@ -442,6 +443,75 @@ func _test_relax_breaks_on_disaster() -> void:
 
 
 # --- Placement ----------------------------------------------------------------
+
+func _test_spawn_points_from_nav() -> void:
+	print("spawn points from navigation")
+
+	var builder := DotNpcNavBuilder.new()
+	builder.spacing = 2.0
+	builder.generate_cover = false
+	builder.add_floor(AABB(Vector3(-20, 0, -20), Vector3(40, 0, 40)), 0.0)
+	builder.add_floor(
+		AABB(Vector3(-20, 0, 20), Vector3(40, 0, 10)), 0.0,
+		DotNpcNavData.AREA_GROUND, DotNpcNavData.Flag.CROUCH
+	)
+
+	var nav := builder.build(&"arena", "digest")
+	var director := _director(_spawner())
+
+	var kept := director.set_spawn_points_from_nav(nav, 8.0)
+
+	_check(kept > 0, "navigation becomes spawn points", "%d of %d" % [
+		kept, nav.point_count()
+	])
+
+	# Not a nicety. choose_spawn_point walks every candidate and raycasts the ones
+	# inside the distance band, so an unthinned two-metre grid is a few thousand
+	# raycasts per wave on the server.
+	_check(
+		kept < nav.point_count() / 4,
+		"thinned rather than copied, because every candidate costs a raycast per wave",
+		"%d of %d" % [kept, nav.point_count()]
+	)
+
+	var closest := INF
+	for i in director.spawn_points.size():
+		for j in range(i + 1, director.spawn_points.size()):
+			closest = minf(
+				closest, director.spawn_points[i].distance_to(director.spawn_points[j])
+			)
+
+	_check(
+		closest >= 8.0 - 0.001,
+		"and no two kept points are closer than the spacing asked for",
+		"%.2f m" % closest
+	)
+
+	var crouch_free := director.set_spawn_points_from_nav(
+		nav, 4.0, DotNpcNavFilter.walking_only()
+	)
+	var in_the_tunnel := 0
+	for point in director.spawn_points:
+		if point.z > 20.0:
+			in_the_tunnel += 1
+
+	_check(crouch_free > 0, "a filter still keeps most of the map")
+	_check(
+		in_the_tunnel == 0,
+		"and keeps the horde out of the crouch tunnel it cannot use"
+	)
+
+	_check(
+		director.set_spawn_points_from_nav(null) == 0,
+		"no navigation is no spawn points rather than an error"
+	)
+	_check(
+		director.spawn_points.is_empty(),
+		"and clears whatever was there, so a map change does not leave the last map's"
+	)
+
+	director.queue_free()
+
 
 func _test_placement_distance() -> void:
 	print("placement: how far")
