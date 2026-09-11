@@ -9,12 +9,12 @@ extends DotConfig
 ## "is it too hard" is a question that is only ever answered by playing it and then
 ## changing a number.
 ##
-## [b]The shape is Left 4 Dead's and the numbers are ours.[/b] Build up until the
-## players are having a hard time, hold it there briefly, let it fall, then leave them
-## alone for long enough to breathe and move — and then do it again. Valve's insight was
-## that the cycle should be driven by an estimate of what the players are *experiencing*
-## rather than by a timer, because a timer gives every player the same game whether they
-## are winning or losing.
+## [b]The shape is the co-operative survival shooters' and the numbers are ours.[/b]
+## Build up until the players are having a hard time, hold it there briefly, let it
+## fall, then leave them alone for long enough to breathe and move — and then do it
+## again. The insight that genre contributed was that the cycle should be driven by an
+## estimate of what the players are [i]experiencing[/i] rather than by a timer, because
+## a timer gives every player the same game whether they are winning or losing.
 
 @export_group("Population")
 

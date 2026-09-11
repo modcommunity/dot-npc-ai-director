@@ -2,7 +2,8 @@
 class_name DotNpcDirector
 extends Node
 
-## Population and pacing. The Left 4 Dead director, over a [DotNpcSpawner].
+## Population and pacing. The co-operative survival shooters' director, over a
+## [DotNpcSpawner].
 ##
 ## [b]Four phases and one number.[/b] BUILD_UP raises the population until the players
 ## are having a hard time; SUSTAIN holds it there briefly; FADE lets it fall; RELAX

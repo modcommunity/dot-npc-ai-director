@@ -3,7 +3,7 @@ extends RefCounted
 
 ## How hard one player is having it, 0 to 1. What the whole pacing cycle turns on.
 ##
-## [b]This is Valve's actual insight and it is worth stating plainly.[/b] A director
+## [b]This is the genre's actual insight and it is worth stating plainly.[/b] A director
 ## driven by a timer gives every player the same game whether they are winning or losing.
 ## A director driven by an estimate of what the players are *experiencing* gives a team
 ## that is struggling a moment to recover and a team that is coasting something to do —

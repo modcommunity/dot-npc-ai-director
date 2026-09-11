@@ -1,6 +1,6 @@
 # dot-npc-ai-director
 
-**The Left 4 Dead director.** Population, pacing, and the build-up / sustain / fade /
+**The co-operative survival shooters' director.** Population, pacing, and the build-up / sustain / fade /
 relax cycle, driven by an estimate of how hard the players are having it rather than by
 a timer — spawning ahead of them along their route, out of sight, and reclaiming what is
 behind.
@@ -12,7 +12,7 @@ run this over dot-npc's own `DotNpcBrain` and never install a behaviour tree.
 ## The one idea
 
 **A director driven by a timer gives every player the same game whether they are winning
-or losing.** Valve's insight was to drive it from an estimate of what the players are
+or losing.** That genre's insight was to drive it from an estimate of what the players are
 *experiencing* instead: a team that is struggling gets a moment to recover and a team
 that is coasting gets something to do, from the same rules, with no difficulty setting.
 
@@ -209,7 +209,7 @@ two copies of one list.
 - **No special infected.** A tank, a smoker and a boomer are a game's content and their
   cooldowns are a game's rules. A director that shipped them would be a game.
 - **No map events.** Crescendo events, saferooms and finales are level scripting.
-- **No item or ammo placement.** Valve's director does that too; here it is dot-loadout's
+- **No item or ammo placement.** The original director does that too; here it is dot-loadout's
   world pickups and a game's decision, and joining them would make this addon depend on
   one more thing.
 - **No difficulty setting.** The whole point is that there is not one. A game that wants

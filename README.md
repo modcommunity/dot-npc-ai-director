@@ -18,7 +18,7 @@ Depends on **dot-core** and **[dot-npc](https://github.com/modcommunity/dot-npc)
 
 ## Why it is not a spawn timer
 
-A timer gives every player the same game whether they are winning or losing. This is driven by what the players are actually experiencing — damage taken, enemies close, time without a break — so a team that is struggling gets a moment to recover and a team that is coasting gets something to do. Same rules, no difficulty setting.
+A timer gives every player the same game whether they are winning or losing. This is driven by what the players are actually experiencing, such as damage taken, enemies close and time without a break, so a team that is struggling gets a moment to recover and a team that is coasting gets something to do. Same rules, no difficulty setting.
 
 ## Installing
 
