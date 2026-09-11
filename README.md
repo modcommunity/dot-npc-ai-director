@@ -12,26 +12,17 @@ This asset, along with all the others, was built initially with **Claude Code** 
 I intend on reviewing code, testing, and editing documentation regularly. If you're interested in helping out, please let me know!
 
 ## An AI Director
-**The Left 4 Dead director for Godot 4.** Population, pacing and the build-up / sustain
-/ fade / relax cycle, driven by an estimate of how hard the players are having it rather
-than by a timer.
+**A dynamic pacing director for Godot 4.** Population, pacing and the build-up / sustain / fade / relax cycle, driven by an estimate of how hard the players are having it rather than by a timer.
 
-Depends on **dot-core** and **[dot-npc](https://github.com/modcommunity/dot-npc)**. Not
-on `dot-npc-ai`: this decides how many and where, and what each one does when it gets
-there is a brain's business.
+Depends on **dot-core** and **[dot-npc](https://github.com/modcommunity/dot-npc)**. Not on `dot-npc-ai`: this decides how many and where, and what each one does when it gets there is a brain's business.
 
 ## Why it is not a spawn timer
 
-A timer gives every player the same game whether they are winning or losing. This is
-driven by what the players are actually experiencing — damage taken, enemies close, time
-without a break — so a team that is struggling gets a moment to recover and a team that
-is coasting gets something to do. Same rules, no difficulty setting.
+A timer gives every player the same game whether they are winning or losing. This is driven by what the players are actually experiencing — damage taken, enemies close, time without a break — so a team that is struggling gets a moment to recover and a team that is coasting gets something to do. Same rules, no difficulty setting.
 
 ## Installing
 
-Copy `addons/dot_npc_ai_director/`, `addons/dot_npc/` and
-[`dot-core`](https://github.com/modcommunity/dot-core)'s `addons/dot_core/` into your
-project, and enable them in *Project → Project Settings → Plugins*.
+Copy `addons/dot_npc_ai_director/`, `addons/dot_npc/` and [`dot-core`](https://github.com/modcommunity/dot-core)'s `addons/dot_core/` into your project, and enable them in *Project → Project Settings → Plugins*.
 
 ## Five minutes
 
@@ -51,16 +42,11 @@ for player in players:
 director.tick(delta)
 ```
 
-Health as a **fraction**, not a damage number: a game that had to report damage would
-have to remember to from every damage path it has, and the one it forgets is the one
-that matters.
+Health as a **fraction**, not a damage number: a game that had to report damage would have to remember to from every damage path it has, and the one it forgets is the one that matters.
 
 ## The relax needs both a clock and a distance
 
-Time alone lets a team that has stopped to argue about a door be attacked on schedule.
-Distance alone lets a team that is sprinting be attacked every few seconds. And the
-distance is the **least-travelled** player's, because one person scouting ahead has not
-moved the party anywhere.
+Time alone lets a team that has stopped to argue about a door be attacked on schedule. Distance alone lets a team that is sprinting be attacked every few seconds. And the distance is the **least-travelled** player's, because one person scouting ahead has not moved the party anywhere.
 
 ## Validating
 
