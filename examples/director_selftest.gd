@@ -16,9 +16,17 @@ const BODY := "res://fixtures/npc_body.tscn"
 
 const CHECKS := 52
 
+## Sections entered against sections that ran to their last line, and against this. A
+## runtime error inside a section aborts that function and nothing says so; a section that
+## bailed out early after a failed guard is counted as not finished on purpose. The CHECKS
+## total is the other half — see docs/testing.md.
+const SECTIONS := 15
+
 var _passed := 0
 var _failed := 0
 var _failures := PackedStringArray()
+var _entered := 0
+var _completed := 0
 
 var _world: Node3D = null
 
@@ -57,6 +65,13 @@ func _run() -> void:
 	for line in _failures:
 		print("  FAIL  %s" % line)
 
+	print("%d of %d sections ran to their last line" % [_completed, _entered])
+	if _entered != SECTIONS or _completed != _entered:
+		print("ERROR: %d sections entered and %d completed, %d expected. One aborted or was skipped." % [
+			_entered, _completed, SECTIONS
+		])
+		get_tree().quit(1)
+		return
 	# The total the section counter cannot be. A runtime error inside a section aborts
 	# that function, and the counter is satisfied because the section had already
 	# announced itself. See docs/testing.md.
@@ -67,6 +82,16 @@ func _run() -> void:
 		get_tree().quit(1)
 		return
 	get_tree().quit(1 if _failed > 0 else 0)
+
+
+func _section(title: String) -> void:
+	_entered += 1
+	print(title)
+
+
+## A section reached its last line. See [constant SECTIONS].
+func _done() -> void:
+	_completed += 1
 
 
 func _check(ok: bool, what: String, detail: String = "") -> void:
@@ -150,7 +175,7 @@ func _rules() -> DotNpcDirectorRules:
 # --- Rules and stress ---------------------------------------------------------
 
 func _test_rules() -> void:
-	print("rules")
+	_section("rules")
 
 	var rules := DotNpcDirectorRules.new()
 	_check(rules.validate().ok, "the defaults are usable")
@@ -177,10 +202,11 @@ func _test_rules() -> void:
 		configured.peak_per_player == 30.0,
 		"and it is a DotConfig, so a campaign is retuned in a file"
 	)
+	_done()
 
 
 func _test_stress() -> void:
-	print("stress")
+	_section("stress")
 
 	var rules := _rules()
 	var player := DotNpcDirectorStress.make(&"alice")
@@ -219,10 +245,11 @@ func _test_stress() -> void:
 		"and falling down a shaft is not progress",
 		"%.1f m; the relax must not end because somebody fell" % falling.travelled
 	)
+	_done()
 
 
 func _test_stress_seeding() -> void:
-	print("stress: joining late")
+	_section("stress: joining late")
 
 	var rules := _rules()
 	var joiner := DotNpcDirectorStress.make(&"late")
@@ -240,10 +267,11 @@ func _test_stress_seeding() -> void:
 
 	joiner.advance(rules, Vector3.ZERO, 0.3, 0, 0.1)
 	_check(joiner.value > 0.0, "but damage after that counts normally")
+	_done()
 
 
 func _test_flow() -> void:
-	print("flow")
+	_section("flow")
 
 	var flow := DotNpcDirectorFlow.new(PackedVector3Array([
 		Vector3(0, 0, 0), Vector3(0, 0, -100), Vector3(50, 0, -100)
@@ -278,12 +306,13 @@ func _test_flow() -> void:
 	var arena := DotNpcDirectorFlow.new()
 	_check(not arena.has_route(), "and a map with no critical path says so honestly")
 	_check(arena.flow_of(Vector3(9, 9, 9)) == 0.0, "rather than refusing")
+	_done()
 
 
 # --- Pacing -------------------------------------------------------------------
 
 func _test_population() -> void:
-	print("population")
+	_section("population")
 
 	var spawner := _spawner()
 	var director := _director(spawner)
@@ -307,10 +336,11 @@ func _test_population() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_cycle() -> void:
-	print("the cycle")
+	_section("the cycle")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -380,10 +410,11 @@ func _test_cycle() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_relax_needs_both() -> void:
-	print("a relax needs both")
+	_section("a relax needs both")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -421,10 +452,11 @@ func _test_relax_needs_both() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_relax_breaks_on_disaster() -> void:
-	print("a relax that has to end")
+	_section("a relax that has to end")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -451,12 +483,13 @@ func _test_relax_breaks_on_disaster() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 # --- Placement ----------------------------------------------------------------
 
 func _test_spawn_points_from_nav() -> void:
-	print("spawn points from navigation")
+	_section("spawn points from navigation")
 
 	var builder := DotNpcNavBuilder.new()
 	builder.spacing = 2.0
@@ -522,10 +555,11 @@ func _test_spawn_points_from_nav() -> void:
 	)
 
 	director.queue_free()
+	_done()
 
 
 func _test_placement_distance() -> void:
-	print("placement: how far")
+	_section("placement: how far")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -553,10 +587,11 @@ func _test_placement_distance() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_placement_ahead() -> void:
-	print("placement: ahead")
+	_section("placement: ahead")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -587,10 +622,11 @@ func _test_placement_ahead() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_placement_refuses() -> void:
-	print("placement: refusing")
+	_section("placement: refusing")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -617,10 +653,11 @@ func _test_placement_refuses() -> void:
 	director.queue_free()
 	empty.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_weighting() -> void:
-	print("weighting")
+	_section("weighting")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -648,10 +685,11 @@ func _test_weighting() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_reclaim_behind() -> void:
-	print("reclaim")
+	_section("reclaim")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -681,10 +719,11 @@ func _test_reclaim_behind() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
 
 
 func _test_players_leaving() -> void:
-	print("players leaving")
+	_section("players leaving")
 
 	var spawner := _spawner()
 	var rules := _rules()
@@ -723,3 +762,4 @@ func _test_players_leaving() -> void:
 
 	director.queue_free()
 	spawner.queue_free()
+	_done()
