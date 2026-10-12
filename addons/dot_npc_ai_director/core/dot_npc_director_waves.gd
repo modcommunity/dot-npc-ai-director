@@ -95,6 +95,12 @@ var release_growth: float = 0.12
 ## ROUNDS: seconds after a wave's last release that it counts as cleared whatever is alive.
 var overtime_seconds: float = 150.0
 
+## ROUNDS: a wave down to this many stragglers is over [member straggler_seconds] after its
+## last release, sooner than the overtime: two left bashing at a door nobody can see through
+## held a breather off for two and a half minutes. 0 turns it off.
+var straggler_count: int = 3
+var straggler_seconds: float = 30.0
+
 ## CYCLE: seconds of a day that are dawn and dusk, over which [method daylight] ramps.
 var twilight_seconds: float = 10.0
 
@@ -198,7 +204,8 @@ func tick(delta: float, p_alive: int, p_players: int) -> void:
 						since_last_sent += delta
 						if alive <= 0:
 							_end_horde(false)
-						elif since_last_sent >= overtime_seconds:
+						elif since_last_sent >= overtime_seconds \
+								or (alive <= straggler_count and since_last_sent >= straggler_seconds):
 							_end_horde(true)
 				Style.CYCLE:
 					if stage_elapsed >= horde_seconds:

@@ -98,7 +98,7 @@ The stress cycle paces a team that is moving: its relax ends on distance travell
 - **It spawns nothing.** It says what is owed (`take`, `give_back`) and how hard the stretch is (`strength`); the game spawns, and reports how many of the wave are alive. So a suite runs it with numbers, and a game drives commons, drones or a 2D swarm with it unchanged.
 - **A wave is released, never dropped.** `take` hands out what `release_rate()` has accrued, within the room the game says it has. A hundred bodies on one frame is a hitch and a crowd at one door.
 - **What could not be spawned is owed again** (`give_back`): a wave that silently shrank is a wave that cleared early.
-- **Cleared means dead, with a backstop.** One body stuck behind a crate would otherwise hold the breather off for ever; `overtime` says the wave ended on time, and what happens to the stragglers is the game's call.
+- **Cleared means dead, with a backstop.** One body stuck behind a crate would otherwise hold the breather off for ever: a wave ends `overtime_seconds` after its last release, or `straggler_seconds` after it once only `straggler_count` are left (two bashing at a door nobody could see through held a school's breather off for minutes). `overtime` says the wave ended on time, and what happens to the stragglers is the game's call.
 - **Growth is linear plus a small square** (`growth`, `growth_accel`): linear alone makes the last waves feel like the middle ones.
 
 ## Deliberately not here

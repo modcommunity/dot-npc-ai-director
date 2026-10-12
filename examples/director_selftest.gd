@@ -827,11 +827,19 @@ func _test_waves_rounds() -> void:
 
 	# A straggler nobody can reach does not hold the breather off for ever.
 	_run_waves(w, 10.1, 0)
-	w.overtime_seconds = 3.0
+	w.straggler_seconds = 5.0
+	var released_at := -1.0
+	var t := 0.0
 	for i in 200:
 		var _n := w.take(100)
 		w.tick(0.1, 1, 4)
-	_check(w.stage == DotNpcDirectorWaves.Stage.QUIET and w.overtime, "a wave ends on overtime with a straggler left, and says so")
+		t += 0.1
+		if released_at < 0.0 and w.sent >= w.budget:
+			released_at = t
+		if w.stage != DotNpcDirectorWaves.Stage.HORDE:
+			break
+	_check(w.stage == DotNpcDirectorWaves.Stage.QUIET and w.overtime and t - released_at < 6.0,
+		"a wave down to a straggler or two ends soon after its last release, and says so", "%.1f s after" % (t - released_at))
 
 	# Wave 3, the last: clearing it finishes the hold.
 	_run_waves(w, 10.1, 0)
