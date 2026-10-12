@@ -57,6 +57,34 @@ A spawn point must be between 18 m and 70 m from every player and, by default, o
 
 Signals: `phase_changed(from, to)` and `wave_spawned(at, count)`. `describe_lines()` prints the phase, stress, population and travel for a console.
 
+## Holding a place: waves, nights or a clock
+
+The loop above paces a team that is moving. A team holding a place (a school, a fort, an arena) wants a schedule instead, and `DotNpcDirectorWaves` is one, in three styles:
+
+| Style | What a horde stretch is | When it ends | The quiet between |
+| --- | --- | --- | --- |
+| `ROUNDS` | a wave: a number of enemies, bigger every wave | when all of it has come and none is left alive | a breather |
+| `CYCLE` | a night: a length of time, harder every night | at dawn, however many are left | a day, with `daylight()` going 0 to 1 and back |
+| `CLOCK` | one stretch, harder as it runs (0 seconds: for ever) | when the clock runs out | none |
+
+```gdscript
+var waves := DotNpcDirectorWaves.new()
+waves.style = DotNpcDirectorWaves.Style.ROUNDS
+waves.count = 10                 # waves, or nights
+waves.quiet_seconds = 30.0       # the breather, or a day
+waves.wave_base = 16             # wave 1 for one player; wave_per_player more for each other
+waves.stage_changed.connect(func(stage, index): print(waves.stage_name(), " ", index))
+waves.finished.connect(func(): print("held"))
+waves.begin(players.size())
+
+# Every server tick:
+waves.tick(delta, enemies_of_this_wave_alive, players.size())
+var n := waves.take(room_for)    # ROUNDS: how many of the wave to spawn now
+# ...spawn n; give_back(k) any you could not
+```
+
+It spawns nothing itself: it says what is owed and how hard this stretch is (`strength()`, 1 for the first), and your game decides what that means. A wave also ends `overtime_seconds` after its last enemy was released, so one stuck behind a crate never holds the breather off for ever.
+
 ## Settings
 The rules live in a `DotNpcDirectorRules` resource, set on the director's `rules` (it makes a default one if you do not). Like every Dot config it is layered: inspector defaults, then a JSON file, then the environment, then the command line. Call `load_layered()` on it before adding the director:
 

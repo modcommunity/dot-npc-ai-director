@@ -85,6 +85,22 @@ That is deliberately one branch in one function rather than a flag on this class
 | Whether pacing runs at all | `DotNpcDirector.enabled`, for a scripted set piece |
 | What a spawned NPC then does | its brain: dot-npc's, or dot-npc-ai's |
 
+## A hold-out is a schedule, not a cycle
+
+The stress cycle paces a team that is moving: its relax ends on distance travelled. A team holding a place does not travel, so its relax never ends, and the cycle has nothing to say about when a hold is won. `DotNpcDirectorWaves` is the other half: a fixed schedule of quiet and horde stretches in one of three styles.
+
+| Style | Horde stretch | Ends | Quiet stretch |
+| --- | --- | --- | --- |
+| **ROUNDS** | a wave: a count of enemies, `wave_size(k)` | when all of it is released and none is alive, or `overtime_seconds` after the last release | the breather |
+| **CYCLE** | a night: a length of time | at dawn, however many are left | the day; `daylight()` ramps through dawn and dusk |
+| **CLOCK** | one stretch, harder as it runs; 0 seconds is endless | when the clock runs out | none after the opening one |
+
+- **It spawns nothing.** It says what is owed (`take`, `give_back`) and how hard the stretch is (`strength`); the game spawns, and reports how many of the wave are alive. So a suite runs it with numbers, and a game drives commons, drones or a 2D swarm with it unchanged.
+- **A wave is released, never dropped.** `take` hands out what `release_rate()` has accrued, within the room the game says it has. A hundred bodies on one frame is a hitch and a crowd at one door.
+- **What could not be spawned is owed again** (`give_back`): a wave that silently shrank is a wave that cleared early.
+- **Cleared means dead, with a backstop.** One body stuck behind a crate would otherwise hold the breather off for ever; `overtime` says the wave ended on time, and what happens to the stragglers is the game's call.
+- **Growth is linear plus a small square** (`growth`, `growth_accel`): linear alone makes the last waves feel like the middle ones.
+
 ## Deliberately not here
 
 - **No special enemies.** A boss and the specialist enemies with their own abilities are a game's content, and their cooldowns are a game's rules. A director that shipped them would be a game.
