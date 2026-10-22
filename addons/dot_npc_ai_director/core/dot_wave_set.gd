@@ -646,7 +646,7 @@ func _entry(k: int) -> Dictionary:
 			if key == "pool":
 				acc["pool"] = _merge_pool(acc["pool"], layer["pool"])
 			elif key == "extra":
-				DotAddonConfig._merge(acc["extra"], layer["extra"].duplicate(true))
+				DotAddonConfig.merge(acc["extra"], layer["extra"].duplicate(true))
 			else:
 				acc[key] = layer[key]
 	return acc

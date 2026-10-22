@@ -11,5 +11,6 @@ extends RefCounted
 #    CYCLE (days and nights) and CLOCK; begin, tick, take, give_back, strength, daylight.
 # 3: skill estimate, difficulty multipliers and the specials budget (all off by default).
 # 4: DotWaveSet, DotWaveSpec and DotNpcDirectorWaves.from_profile: wave sets as `waves` profiles.
+#    Needs dot-core API level 17 (the public DotAddonConfig.merge).
 const LEVEL := 4
 const OLDEST := 1
