@@ -19,7 +19,7 @@ The director takes no dependency on dot-map or dot-match: the game passes a set 
 
 ## Layers
 
-Same tiers as `DotProfile`, weakest first: schema defaults < `cfg/addons/dot_npc_ai_director/waves/<set>.yml` < `cfg/game/<game>/waves/<set>.yml` < `cfg/server/waves/<set>.yml` < environment < command line. A server owner copies nothing: a file in `cfg/server/waves/` with a few keys overrides those keys of the game's set (`extends:` is implied for the same id). Dictionaries merge by key and lists replace, so waves are a map keyed by number, never a list; otherwise changing wave 5 would mean restating all ten.
+Same tiers as `DotProfile`, weakest first: schema defaults < `cfg/addons/dot_npc_ai_director/waves/<set>.yml` < `cfg/game/<game>/waves/<set>.yml` < `cfg/server/addons/dot_npc_ai_director/waves/<set>.yml` < `cfg/server/game/<game>/waves/<set>.yml` < environment < command line. A server owner copies nothing: a file in `cfg/server/game/<game>/waves/` with a few keys overrides those keys of the game's set (`extends:` is implied for the same id). Dictionaries merge by key and lists replace, so waves are a map keyed by number, never a list; otherwise changing wave 5 would mean restating all ten.
 
 Environment and command line use the profile prefix: `PROFILE_WAVES_SCHOOL_HOLD_COUNT=12`, `--profile.waves/school_hold.count=12`. Only scalars in the schema can be overridden that way; wave entries are file-only.
 
@@ -111,7 +111,7 @@ Round start: game resolves the set, calls `DotNpcDirectorWaves.from_profile(prof
 ## A new mutant with no code change
 
 1. Add `cfg/game/zombie-zone/npc/zz_bloat_king.yml` (health, speed, damage, `brain:` an existing brain, `model:` an existing scene, `extends: zz_brute` for a quick variant).
-2. Name it in `pool`, `specials` or `boss` of a wave, in the game's set or in `cfg/server/waves/`.
+2. Name it in `pool`, `specials` or `boss` of a wave, in the game's set or in `cfg/server/game/<game>/waves/`.
 3. Start the map. A brain or a model that does not exist yet needs code or an asset; a variant of what exists never does. The existing brains take their tuning from the NPC profile (this is the dot-npc profile work, a prerequisite).
 
 ## Validation
