@@ -1,0 +1,10 @@
+count: 12
+quiet: 20
+waves:
+  2:
+    size: 99
+    pool:
+      tg_common: 5
+  "6-9":
+    specials:
+      tg_spitter: 3

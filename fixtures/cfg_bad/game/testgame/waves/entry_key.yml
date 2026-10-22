@@ -1,0 +1,4 @@
+extends: hold
+waves:
+  sixth:
+    size: 3

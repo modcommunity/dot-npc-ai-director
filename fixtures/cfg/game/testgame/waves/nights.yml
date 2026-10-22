@@ -1,0 +1,10 @@
+extends: hold
+style: cycle
+count: 3
+seconds: 90
+twilight: 8
+nights:
+  2:
+    health_mult: 1.5
+  last:
+    announce: "The last night."

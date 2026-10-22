@@ -1,0 +1,5 @@
+extends: hold
+waves:
+  4:
+    pool:
+      a: 0

@@ -1,4 +1,6 @@
-# Waves as config (design, not built)
+# Waves as config
+
+Built in this repository (API level 4): `DotWaveSet`, `DotWaveSpec`, `DotNpcDirectorWaves.from_profile`, the `waves_check` tool and `examples/waves_selftest.tscn`. The rotation (dot-map) and the game wiring are later tasks. The section "As built" at the end lists the choices the design left open.
 
 A survival server owner should be able to change what comes, how many, how fast, and what the team is paid, by editing a yml file, and add a new mutant without a code change. Today the numbers live in `ZzConfig` cvars and `ZzSurvival.TWISTS`, and the one NPC mix is hardcoded in the horde. This is the shape that replaces that; it is built on `DotProfile` (dot-core, in progress) and on the schedule that already exists, `DotNpcDirectorWaves`.
 
@@ -133,3 +135,35 @@ At load and again at match start, returned as a `DotResult` with one aggregated 
 6. Other hold-out games adopt it; twists to yml; an in-game editor is out of scope (files only).
 
 Order is 1-2 (parallel), 3, 4, 5. Steps 3 and 4 can run together once 1 exists.
+
+## As built
+
+How to use it.
+
+```gdscript
+var profiles := DotWaveSet.make_set("my-game")                      # roots default to the config roots
+var res := DotNpcDirectorWaves.from_profile(profiles.load_profile("school_hold").value, "hard", players, {
+    "npc_exists": func(id): return npcs.has_id(id),                 # optional
+    "validate_extra": func(extra): return my_game_check(extra),      # optional: DotResult
+    "wave_resolved": func(spec): return my_twists(spec),             # optional: DotWaveSpec -> DotWaveSpec
+    "map_key": "zz_school",                                         # names the map in progress signals
+    "rules": director.rules,                                         # optional: apply the set's director: block
+})
+```
+
+`DotWaveSet.load_set(profiles, id, difficulty, npc_exists, validate_extra)` returns the set alone; `schedule.wave_set` is the set behind a schedule. `schedule.wave_started(spec)` is the resolved wave; `schedule.spec` is the one in play. A failed load returns one `CODE_INVALID` listing every problem; the game falls back to the next candidate and logs once.
+
+Choices where the design was open (Christian has not answered; change them here and in `dot_wave_set.gd` together):
+
+- The YAML reader refuses flow mappings (`{a: 1}`), so every example above is written in block style in the files; only flow sequences of scalars work.
+- `cycle` sets take `nights:` and every other style takes `waves:`; the wrong one is an error, not ignored. `seconds` is the night length (cycle) or the whole hold (clock, 0 is endless); `twilight` is the dawn and dusk ramp.
+- A cycle or clock set has no head count: `spec.size` is 0 and the game reads the schedule's `strength()`.
+- Merge order for one wave: the set's values, then every covering range from widest to narrowest, then the number, then `last`. `last` is the final wave: `count`, or 1 for a clock. A dictionary key (`specials`, `extra`) merges key by key across tiers, so a server range that sets one special keeps the game's others; a `pool` replaces, unless every key starts with `+`, which adds.
+- Two entries with the same number in one file are an error; an entry or range past `count` is a warning and the excess is ignored.
+- `release` and `size` in an entry are absolute (enemies a second, head count); `size_mult` and the difficulty's `size` multiply either the formula or the absolute size. Difficulty never touches the pool.
+- A difficulty name that the set does not list is an error, except `normal`, which is the identity when unlisted. Names that are also `DotNpcDirectorDifficulty` presets (`easy`, `normal`, `hard`, `nightmare`) feed `difficulty_preset` through `apply_to_rules`; other names change the multipliers only.
+- `director:` absent leaves the rules untouched (a pure schedule), and the shipped `hold.yml` has none. `skill` sets `skill_enabled`; `specials_budget` N sets `special_budget_cap` to N (at least 1) and `specials_enabled` to `N > 0`. The set does not spend the budget: `DotWaveSet.specials_within_budget(spec, director.special_budget())` says how many of the wave's specials it may spend, and `skilled_size(size, skill, rules)` clamps a fixed size to `skill_min..skill_max` (off with `skill: false`).
+- `alive_cap` is the set's ceiling on enemies alive at once for N players (`schedule.alive_cap()`); the game applies it with the spawner.
+- The map-cycle hook is `DotWaveSet.progress(map_key, wave, count, done)`, emitted when a wave starts and when the set finishes, plus `reached` (map key to highest wave) and `progress_of(key)`. The director does not name dot-map: the game sets `map_key` at map start and feeds the signal to whatever tracks per-map progress.
+- `waves_check` lists a set's layers under each `ok` line. Run it as `godot --headless --path . --script res://addons/dot_npc_ai_director/tools/waves_check.gd -- --game=<game> [--roots=a,b] [--check-npcs]`; it builds each set once per difficulty it names and ends with `WAVES_CHECK sets=N failed=M`.
+- The shipped default is `cfg/addons/dot_npc_ai_director/waves/hold.yml`; a game's roots must contain it (copy `cfg/` into the pack) or its sets cannot `extends: hold`.

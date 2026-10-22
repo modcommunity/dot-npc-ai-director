@@ -1,0 +1,6 @@
+extends: hold
+waves:
+  2:
+    boss:
+      npc: x
+      at: 1.5

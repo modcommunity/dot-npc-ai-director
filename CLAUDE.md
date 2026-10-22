@@ -26,10 +26,14 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 | `addons/dot_npc_ai_director/core/dot_npc_director_flow.gd` | `DotNpcDirectorFlow`: the map's critical path as a distance along a line |
 | `addons/dot_npc_ai_director/core/dot_npc_director_rules.gd` | `DotNpcDirectorRules`: every number, a `DotConfig` |
 | `addons/dot_npc_ai_director/core/dot_npc_director_waves.gd` | `DotNpcDirectorWaves`: a hold-out's schedule (waves, days and nights, a clock) |
-| `addons/dot_npc_ai_director/dot_npc_ai_director_api.gd` | the API level (`DotAddonApi`): 2 since `DotNpcDirectorWaves` |
+| `addons/dot_npc_ai_director/core/dot_wave_set.gd` | `DotWaveSet`: a `waves` profile (kind `waves`, `cfg/game/<game>/waves/<id>.yml`) resolved to a `DotWaveSpec` per wave; ranges, `last`, difficulty, validation, the `wave_resolved` hook, the per-map `progress` signal ([waves](docs/waves.md)) |
+| `addons/dot_npc_ai_director/tools/waves_check.gd` | the headless validator for every wave set of a game |
+| `cfg/addons/dot_npc_ai_director/waves/hold.yml` | the neutral default set a game `extends` |
+| `addons/dot_npc_ai_director/dot_npc_ai_director_api.gd` | the API level (`DotAddonApi`): 4 since `DotWaveSet` |
 | `addons/dot_npc_ai_director/runtime/dot_npc_director.gd` | `DotNpcDirector`: the phase cycle, placement, reclaiming, `set_spawn_points_from_nav` |
 | `examples/director_selftest.tscn` | the suite; non-zero on failure |
 | `examples/director_adapt_selftest.tscn` | the skill, difficulty and specials suite |
+| `examples/waves_selftest.tscn` | the wave-set suite (fixtures in `fixtures/cfg*`) |
 | `fixtures/npc_body.tscn` | the NPC body the suite spawns |
 
 ## Running and testing
@@ -51,6 +55,7 @@ The suite turns the out-of-sight rule off (`spawn_out_of_sight = false`), and sa
 - Population is a flat list walked round-robin; repetition is the weighting. [design](docs/design.md#it-owns-no-npcs)
 - 2D is the spawner's question (`two_dimensional`), one branch at the spawn; never a flag here. [design](docs/design.md#a-2d-game-drives-this-unchanged)
 - A hold-out is `DotNpcDirectorWaves`, not the stress cycle (whose relax waits for distance a holding team never travels); it spawns nothing, a wave is released by `take` and owed again by `give_back`, and a wave ends on `overtime_seconds` as well as on being cleared. [design](docs/design.md#a-hold-out-is-a-schedule-not-a-cycle)
+- Wave sets are config: numbers in `waves` profiles, meaning in the game (`extra.<game>`, the `wave_resolved` hook); the director holds NPC ids and never loads an NPC or names a map. [waves](docs/waves.md)
 - Adding anything a game can call bumps `LEVEL` in `dot_npc_ai_director_api.gd` (DotAddonApi's rule).
 
 Skill, difficulty multipliers and a specials budget are optional rules, off by default ([design](docs/design.md#optional-adaptation-all-off-by-default)). Deliberately not here: special enemy behaviour, map events, item placement, a player-versus-player director. [design](docs/design.md#deliberately-not-here)

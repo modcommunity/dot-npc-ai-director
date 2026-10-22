@@ -1,0 +1,36 @@
+# The neutral hold-out: ten rounds, the numbers DotNpcDirectorWaves has always had.
+# Block style only: the family's YAML reader refuses flow mappings such as {a: 1}.
+style: rounds
+count: 10
+first_quiet: 30
+quiet: 30
+size:
+  base: 16
+  per_player: 4
+growth:
+  linear: 0.25
+  accel: 0.02
+release:
+  base: 1.5
+  growth: 0.12
+overtime:
+  seconds: 150
+  stragglers: 3
+  straggler_seconds: 30
+alive_cap:
+  base: 24
+  per_player: 6
+pool:
+  common: 10
+difficulty:
+  easy:
+    size: 0.7
+    health: 0.8
+    speed: 0.95
+    reward: 1.2
+  normal:
+  hard:
+    size: 1.3
+    health: 1.2
+    speed: 1.1
+    reward: 0.9

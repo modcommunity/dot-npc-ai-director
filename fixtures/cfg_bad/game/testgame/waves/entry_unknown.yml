@@ -1,0 +1,4 @@
+extends: hold
+waves:
+  2:
+    sizee: 3

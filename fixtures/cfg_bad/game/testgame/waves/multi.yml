@@ -1,0 +1,10 @@
+extends: hold
+director:
+  skil: true
+waves:
+  2:
+    sizee: 3
+  3:
+    boss:
+      npc: x
+      at: 2

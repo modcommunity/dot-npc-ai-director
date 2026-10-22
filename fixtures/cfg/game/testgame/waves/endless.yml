@@ -1,0 +1,6 @@
+extends: hold
+style: clock
+seconds: 0
+waves:
+  1:
+    announce: "Hold as long as you can."

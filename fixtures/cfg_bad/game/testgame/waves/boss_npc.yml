@@ -1,0 +1,5 @@
+extends: hold
+waves:
+  2:
+    boss:
+      at: 0.5

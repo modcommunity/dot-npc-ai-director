@@ -1,0 +1,4 @@
+extends: hold
+waves:
+  "9-6":
+    size: 3

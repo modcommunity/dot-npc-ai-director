@@ -58,6 +58,9 @@ signal stage_changed(stage: int, index: int)
 ## The hold is over and held. Emitted once, with the change to DONE.
 signal finished()
 
+## A wave or night began, resolved by the [member wave_set] (only when there is one).
+signal wave_started(spec: DotWaveSpec)
+
 # --- The schedule ---------------------------------------------------------------------------
 
 var style: int = Style.ROUNDS
@@ -129,10 +132,45 @@ var alive: int = 0
 ## Players at the last [method begin] or wave start, which sizes the waves.
 var players: int = 1
 
+## The wave set this schedule was built from, or null for the plain formula.
+var wave_set: DotWaveSet = null
+
+## The resolved wave in play (or the last that was), when there is a [member wave_set].
+var spec: DotWaveSpec = null
+
 var _owed: float = 0.0
+
+## The next wave's own quiet from its entry, read once on entering the quiet; -1 for the set's.
+var _quiet_own: float = -1.0
 
 ## Whether the quiet in play is the opening one, which has its own length.
 var _first_quiet_pending: bool = false
+
+
+## Builds a schedule from a loaded `waves` profile for [param p_players]. Value: the schedule,
+## with its [DotWaveSet] on [member wave_set]. [param opts] may hold `npc_exists` and
+## `validate_extra` (callables), `wave_resolved` (the game's hook), `map_key` and `rules` (a
+## [DotNpcDirectorRules] the set's `director:` block is applied to).
+static func from_profile(profile: DotProfile, p_difficulty: String = "normal", p_players: int = 1, opts: Dictionary = {}) -> DotResult:
+	var res := DotWaveSet.from_profile(profile, p_difficulty, opts.get("npc_exists", Callable()), opts.get("validate_extra", Callable()))
+	if not res.ok:
+		return res
+	var set: DotWaveSet = res.value
+	set.wave_resolved = opts.get("wave_resolved", Callable())
+	set.map_key = opts.get("map_key", "")
+	var sched := DotNpcDirectorWaves.new()
+	set.fill_schedule(sched, maxi(p_players, 1))
+	var check := sched.validate()
+	if not check.ok:
+		return check.wrap("waves/%s" % profile.id)
+	if opts.get("rules") is DotNpcDirectorRules:
+		set.apply_to_rules(opts["rules"])
+	return DotResult.success(sched)
+
+
+## Enemies alive at once the wave set allows now, or 0 when there is none (the game's own cap).
+func alive_cap() -> int:
+	return wave_set.alive_cap(players) if wave_set != null else 0
 
 
 ## Checks the schedule. A game calls this before [method begin], with the numbers its
@@ -268,6 +306,9 @@ func strength() -> float:
 
 ## ROUNDS: enemies a second this wave is released at.
 func release_rate() -> float:
+	if spec != null and spec.release > 0.0 and stage == Stage.HORDE:
+		return spec.release
+
 	return release_base * (1.0 + release_growth * float(maxi(index - 1, 0)))
 
 
@@ -343,24 +384,33 @@ static func style_from(text: String) -> int:
 
 
 func _quiet_length() -> float:
-	return first_quiet_seconds if _first_quiet_pending else quiet_seconds
+	if _first_quiet_pending:
+		return first_quiet_seconds
+
+	return _quiet_own if _quiet_own >= 0.0 else quiet_seconds
 
 
 func _enter(to: int, k: int) -> void:
 	stage = to
 	index = k
 	stage_elapsed = 0.0
+	_quiet_own = wave_set.quiet_of(k) if wave_set != null and to == Stage.QUIET else -1.0
 	stage_changed.emit(stage, index)
 
 
 func _start_horde(k: int) -> void:
 	_first_quiet_pending = false
-	budget = wave_size(k, players) if style == Style.ROUNDS else 0
+	spec = wave_set.resolve(k, players) if wave_set != null else null
+	budget = spec.size if spec != null else (wave_size(k, players) if style == Style.ROUNDS else 0)
 	sent = 0
 	_owed = 0.0
 	since_last_sent = 0.0
 	overtime = false
 	_enter(Stage.HORDE, k)
+
+	if wave_set != null:
+		wave_set.report_progress(k, false)
+		wave_started.emit(spec)
 
 
 func _end_horde(over_time: bool) -> void:
@@ -371,6 +421,10 @@ func _end_horde(over_time: bool) -> void:
 
 	if is_last():
 		_enter(Stage.DONE, index)
+
+		if wave_set != null:
+			wave_set.report_progress(index, true)
+
 		finished.emit()
 	else:
 		_enter(Stage.QUIET, index + 1)
@@ -385,6 +439,9 @@ func describe() -> Dictionary:
 	if style == Style.ROUNDS:
 		out["wave"] = "%d sent of %d, %d alive" % [sent, budget, alive]
 
+	if wave_set != null:
+		out["set"] = wave_set.describe()
+
 	return out
 
 
@@ -394,5 +451,8 @@ func describe_lines() -> PackedStringArray:
 
 	if style == Style.ROUNDS and stage == Stage.HORDE:
 		lines.append("           %d of %d released, %d alive, %.2f a second" % [sent, budget, alive, release_rate()])
+
+	if wave_set != null:
+		lines.append_array(wave_set.describe_lines())
 
 	return lines

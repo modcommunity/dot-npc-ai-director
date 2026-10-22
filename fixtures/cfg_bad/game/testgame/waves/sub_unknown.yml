@@ -1,0 +1,4 @@
+extends: hold
+size:
+  base: 5
+  color: red

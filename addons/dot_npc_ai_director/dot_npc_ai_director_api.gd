@@ -10,5 +10,6 @@ extends RefCounted
 # 2: DotNpcDirectorWaves, a hold-out's schedule: ROUNDS (waves cleared by killing them),
 #    CYCLE (days and nights) and CLOCK; begin, tick, take, give_back, strength, daylight.
 # 3: skill estimate, difficulty multipliers and the specials budget (all off by default).
-const LEVEL := 3
+# 4: DotWaveSet, DotWaveSpec and DotNpcDirectorWaves.from_profile: wave sets as `waves` profiles.
+const LEVEL := 4
 const OLDEST := 1

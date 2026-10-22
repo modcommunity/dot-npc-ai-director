@@ -1,0 +1,51 @@
+extends: hold
+count: 10
+pool:
+  tg_common: 10
+  tg_crawler: 2
+director:
+  skill: true
+  specials_budget: 2
+waves:
+  1:
+    pool:
+      tg_common: 1
+    release: 1.0
+    quiet: 5
+    announce: "They are coming through the gym."
+  3:
+    pool:
+      tg_common: 8
+      tg_crawler: 3
+      tg_sprinter: 2
+  "5":
+    boss:
+      npc: tg_brute
+      count: 1
+      at: 0.33
+    reward:
+      restock: tier2
+      cash: 0
+  "6-9":
+    specials:
+      tg_spitter: 1
+      tg_strangler: 1
+    extra:
+      tg:
+        fog: true
+  8:
+    pool:
+      "+tg_rider": 2
+    size: 40
+  last:
+    boss:
+      npc: tg_brute
+      count: 2
+      at: 0.33
+    pool:
+      tg_common: 6
+      tg_rider: 2
+extra:
+  tg:
+    twists: true
+    breather: patch_up

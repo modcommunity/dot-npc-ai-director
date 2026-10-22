@@ -1,0 +1,5 @@
+extends: hold
+style: cycle
+waves:
+  1:
+    size: 3

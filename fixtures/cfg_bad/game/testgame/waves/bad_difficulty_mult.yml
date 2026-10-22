@@ -1,0 +1,4 @@
+extends: hold
+difficulty:
+  hard:
+    size: -1

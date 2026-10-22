@@ -1,0 +1,9 @@
+extends: hold
+count: 3
+waves:
+  2:
+    size: 5
+  7:
+    size: 9
+  "2-12":
+    quiet: 1
