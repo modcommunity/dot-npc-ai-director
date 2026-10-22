@@ -103,8 +103,12 @@ The stress cycle paces a team that is moving: its relax ends on distance travell
 
 ## Deliberately not here
 
-- **No special enemies.** A boss and the specialist enemies with their own abilities are a game's content, and their cooldowns are a game's rules. A director that shipped them would be a game.
+- **No special enemies.** A boss and the specialist enemies with their own abilities are a game's content. The director only rations which population ids count as special (`DotNpcDirectorSpecials`, off by default).
 - **No map events.** Scripted climaxes, safe rooms and finales are level scripting.
 - **No item or ammo placement.** Directors in the genre often do that too; here it is dot-loadout's world pickups and a game's decision, and joining them would make this addon depend on one more thing.
-- **No difficulty setting.** The whole point is that there is not one. A game that wants one scales `peak_per_player` and `peak_stress`, which is two numbers in a config file.
+- **No difficulty setting by default.** `difficulty_enabled` is off; when on, it only publishes accuracy and damage multipliers (`DotNpcDirectorDifficulty`) for the host to apply, because the director knows no combat addon.
 - **No player-versus-player director.** Deciding where a human-controlled special enemy may spawn is a different problem with a fairness constraint this has nothing to say about.
+
+## Optional adaptation (all off by default)
+
+Three groups in `DotNpcDirectorRules`, each with an `_enabled` switch that leaves behaviour untouched while false. **Skill** (`DotNpcDirectorSkill`): per player, events (health lost, `report_death`, `report_revive`, `report_kill`) fold every `skill_sample_seconds` into a smoothed multiplier within `skill_min`..`skill_max`, blended in over `skill_warmup_seconds` from 1.0, and applied to that player's share of `peak_per_player` in SUSTAIN and FADE. **Difficulty**: a preset name or numeric dial becomes `enemy_accuracy_multiplier()` and `enemy_damage_multiplier()`. **Specials**: `special_kinds` spend a budget that refills one per `special_cooldown_seconds` up to `special_budget_cap`, with `special_max_alive` as a second limit; a denied special becomes the next ordinary kind in the population list.

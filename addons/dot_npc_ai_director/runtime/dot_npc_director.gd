@@ -105,6 +105,11 @@ var _last_reclaim_at: float = -1000.0
 var _behind_spawns: int = 0
 var _total_spawns: int = 0
 
+## Player id -> DotNpcDirectorSkill. Empty while skill is off.
+var _skills: Dictionary = {}
+
+var _specials := DotNpcDirectorSpecials.new()
+
 var wave_count: int = 0
 var spawn_count: int = 0
 var refused_placements: int = 0
@@ -191,6 +196,15 @@ func _ready() -> void:
 	if spawner == null:
 		DotLog.warn(CHANNEL, "the director has no spawner and will do nothing", {})
 
+	_specials.reset(rules)
+
+	if rules.skill_enabled or rules.difficulty_enabled or rules.specials_enabled:
+		DotLog.info(CHANNEL, "director adaptation on", {
+			"skill": rules.skill_enabled,
+			"difficulty": rules.difficulty_enabled,
+			"specials": rules.specials_enabled,
+		})
+
 
 # --- What the game tells it ---------------------------------------------------
 
@@ -213,7 +227,54 @@ func report_player(id: StringName, position: Vector3, health_fraction: float) ->
 ## a peak on behalf of somebody who has left, and it must not be stuck in a relax waiting
 ## for them to travel.
 func forget_player(id: StringName) -> bool:
+	_skills.erase(id)
 	return _players.erase(id)
+
+
+## A player died. Feeds the skill estimate; no effect while skill is off.
+func report_death(id: StringName) -> void:
+	_skill_of(id).add_death()
+
+
+## A player revived a teammate. Feeds the skill estimate.
+func report_revive(id: StringName) -> void:
+	_skill_of(id).add_revive()
+
+
+## A player killed an enemy. Feeds the skill estimate (weighted 0 by default).
+func report_kill(id: StringName) -> void:
+	_skill_of(id).add_kill()
+
+
+## The skill record of a player, made on first use.
+func _skill_of(id: StringName) -> DotNpcDirectorSkill:
+	if not _skills.has(id):
+		_skills[id] = DotNpcDirectorSkill.new()
+
+	return _skills[id]
+
+
+## The multiplier on one player's share of the peak: 1.0 while skill is off or unknown.
+func skill_multiplier(id: StringName) -> float:
+	if rules == null or not rules.skill_enabled or not _skills.has(id):
+		return 1.0
+
+	return (_skills[id] as DotNpcDirectorSkill).multiplier(rules)
+
+
+## Enemy accuracy multiplier for the host to apply; 1.0 while difficulty is off.
+func enemy_accuracy_multiplier() -> float:
+	return DotNpcDirectorDifficulty.accuracy(rules)
+
+
+## Enemy damage multiplier for the host to apply; 1.0 while difficulty is off.
+func enemy_damage_multiplier() -> float:
+	return DotNpcDirectorDifficulty.damage(rules)
+
+
+## Specials that may still be spawned right now by the budget alone.
+func special_budget() -> float:
+	return _specials.budget
 
 
 func player_count() -> int:
@@ -229,7 +290,11 @@ func tick(delta: float) -> void:
 	_now += delta
 
 	_advance_stress(delta)
+	_advance_skill(delta)
 	_advance_phase()
+
+	if rules.specials_enabled:
+		_specials.advance(rules, delta)
 
 	if _now - _last_spawn_at >= rules.spawn_interval:
 		_last_spawn_at = _now
@@ -256,6 +321,16 @@ func _advance_stress(delta: float) -> void:
 			threats = spawner.npcs_near(player.position, rules.stress_threat_radius).size()
 
 		player.advance(rules, player.position, player.health_fraction, threats, delta)
+
+
+func _advance_skill(delta: float) -> void:
+	if not rules.skill_enabled:
+		return
+
+	for id in _players:
+		var skill := _skill_of(id)
+		skill.add_damage((_players[id] as DotNpcDirectorStress).last_loss)
+		skill.advance(rules, delta)
 
 
 ## The party's stress: the worst player's, or the average.
@@ -380,7 +455,32 @@ func target_population() -> int:
 
 	var wanted := int(round(per_player * players))
 
+	if rules.skill_enabled and not _players.is_empty() and (
+		_phase == Phase.SUSTAIN or _phase == Phase.FADE
+	):
+		wanted = int(round(_skilled_population()))
+
 	return mini(wanted, rules.absolute_cap) if rules.absolute_cap > 0 else wanted
+
+
+## The sustain or fade population with each player's share of the peak scaled by skill.
+func _skilled_population() -> float:
+	var relax := rules.relax_per_player
+	var t := 0.0
+
+	if _phase == Phase.FADE:
+		t = (
+			clampf((_now - _phase_started) / rules.fade_seconds, 0.0, 1.0)
+			if rules.fade_seconds > 0.0 else 1.0
+		)
+
+	var total := 0.0
+
+	for id in _players:
+		var peak := rules.peak_per_player * skill_multiplier(id)
+		total += lerpf(peak, relax, t)
+
+	return total
 
 
 func _spawn_toward_target() -> void:
@@ -411,6 +511,12 @@ func _spawn_toward_target() -> void:
 		# conclude the director is broken.
 		var kind := population[(_total_spawns + i) % population.size()]
 
+		if rules.specials_enabled and rules.special_kinds.has(kind):
+			kind = _kind_within_budget(kind, (_total_spawns + i) % population.size())
+
+			if kind == &"":
+				continue
+
 		# [b]The spawner says which dimension its world is, and this is the only place the
 		# director cares.[/b] Everything above — the stress, the phase, the population
 		# target, the scoring of a spawn point — is arithmetic on points in dot-npc's own
@@ -425,6 +531,9 @@ func _spawn_toward_target() -> void:
 		if made != null:
 			placed += 1
 
+			if rules.specials_enabled and rules.special_kinds.has(kind):
+				_specials.spend()
+
 	if placed <= 0:
 		return
 
@@ -433,6 +542,27 @@ func _spawn_toward_target() -> void:
 	wave_count += 1
 
 	wave_spawned.emit(at, placed)
+
+
+## [param kind] if the specials budget allows it, else the next ordinary kind, else empty.
+func _kind_within_budget(kind: StringName, start: int) -> StringName:
+	var alive := 0
+
+	for special in rules.special_kinds:
+		alive += spawner.count_of(special)
+
+	if _specials.allows(rules, alive):
+		return kind
+
+	_specials.denied += 1
+
+	for offset in population.size():
+		var other := population[(start + offset) % population.size()]
+
+		if not rules.special_kinds.has(other):
+			return other
+
+	return &""
 
 
 # --- Where ---------------------------------------------------------------------
@@ -618,6 +748,11 @@ func describe() -> Dictionary:
 		"target": target_population(),
 		"waves": wave_count,
 		"refused": refused_placements,
+		"skill": rules.skill_enabled,
+		"difficulty": "%.2f acc, %.2f dmg" % [enemy_accuracy_multiplier(), enemy_damage_multiplier()],
+		"specials": "%.1f budget, %d spawned, %d denied" % [
+			_specials.budget, _specials.spawned, _specials.denied
+		],
 	}
 
 
@@ -638,10 +773,21 @@ func describe_lines() -> PackedStringArray:
 		wave_count, spawn_count, refused_placements
 	])
 
+	if rules.difficulty_enabled:
+		out.append("difficulty   dial %.2f, accuracy x%.2f, damage x%.2f" % [
+			DotNpcDirectorDifficulty.dial_of(rules), enemy_accuracy_multiplier(), enemy_damage_multiplier()
+		])
+
+	if rules.specials_enabled:
+		out.append("specials     %.1f budget, %d spawned, %d denied" % [
+			_specials.budget, _specials.spawned, _specials.denied
+		])
+
 	for id in _players:
 		var player: DotNpcDirectorStress = _players[id]
-		out.append("  %-16s stress %.2f  health %.0f%%  travelled %.0f m" % [
-			String(id), player.value, player.health_fraction * 100.0, player.travelled
+		out.append("  %-16s stress %.2f  health %.0f%%  travelled %.0f m%s" % [
+			String(id), player.value, player.health_fraction * 100.0, player.travelled,
+			"  skill x%.2f" % skill_multiplier(id) if rules.skill_enabled else ""
 		])
 
 	return out

@@ -19,7 +19,7 @@ The director decides how many enemies are alive and where new ones appear, based
 3. **Fade.** The number of enemies falls back.
 4. **Relax.** A quiet stretch, which only ends when enough time has passed **and** the players have moved on far enough.
 
-Pressure is measured as **stress**: it goes up when a player loses health or has enemies close by, and drains when nothing is happening. A team that is struggling gets a break sooner, and a team that is doing well gets more to deal with. There is no difficulty setting.
+Pressure is measured as **stress**: it goes up when a player loses health or has enemies close by, and drains when nothing is happening. A team that is struggling gets a break sooner, and a team that is doing well gets more to deal with. There is no difficulty setting unless you turn on the optional skill, difficulty and specials rules (all off by default; see docs/design.md).
 
 The director picks how many and where. What an enemy does once it is there is up to its brain ([dot-npc-ai](https://github.com/modcommunity/dot-npc-ai), or your own).
 

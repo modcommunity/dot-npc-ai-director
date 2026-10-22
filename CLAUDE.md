@@ -29,6 +29,7 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 | `addons/dot_npc_ai_director/dot_npc_ai_director_api.gd` | the API level (`DotAddonApi`): 2 since `DotNpcDirectorWaves` |
 | `addons/dot_npc_ai_director/runtime/dot_npc_director.gd` | `DotNpcDirector`: the phase cycle, placement, reclaiming, `set_spawn_points_from_nav` |
 | `examples/director_selftest.tscn` | the suite; non-zero on failure |
+| `examples/director_adapt_selftest.tscn` | the skill, difficulty and specials suite |
 | `fixtures/npc_body.tscn` | the NPC body the suite spawns |
 
 ## Running and testing
@@ -52,4 +53,4 @@ The suite turns the out-of-sight rule off (`spawn_out_of_sight = false`), and sa
 - A hold-out is `DotNpcDirectorWaves`, not the stress cycle (whose relax waits for distance a holding team never travels); it spawns nothing, a wave is released by `take` and owed again by `give_back`, and a wave ends on `overtime_seconds` as well as on being cleared. [design](docs/design.md#a-hold-out-is-a-schedule-not-a-cycle)
 - Adding anything a game can call bumps `LEVEL` in `dot_npc_ai_director_api.gd` (DotAddonApi's rule).
 
-Deliberately not here: special enemies, map events, item placement, a difficulty setting, a player-versus-player director. [design](docs/design.md#deliberately-not-here)
+Skill, difficulty multipliers and a specials budget are optional rules, off by default ([design](docs/design.md#optional-adaptation-all-off-by-default)). Deliberately not here: special enemy behaviour, map events, item placement, a player-versus-player director. [design](docs/design.md#deliberately-not-here)

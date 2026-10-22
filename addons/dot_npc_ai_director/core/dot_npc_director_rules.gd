@@ -135,6 +135,70 @@ extends DotConfig
 ## experience decides whether the game was any good.
 @export var stress_from_worst_player: bool = true
 
+@export_group("Skill")
+
+## Whether each player's recent record scales their share of the peak. Off = no change.
+@export var skill_enabled: bool = false
+
+## Lowest and highest multiplier the skill estimate may put on a player's peak.
+@export_range(0.1, 1.0, 0.01) var skill_min: float = 0.7
+@export_range(1.0, 3.0, 0.01) var skill_max: float = 1.3
+
+## Share of each new sample folded into the estimate, 0 to 1. Small moves slowly.
+@export_range(0.01, 1.0, 0.01) var skill_smoothing: float = 0.1
+
+## Seconds between samples; each folds the events since the last one into the estimate.
+@export_range(1.0, 120.0, 1.0) var skill_sample_seconds: float = 10.0
+
+## Seconds a player is observed before the estimate counts in full; a new player is 1.0.
+@export_range(0.0, 1800.0, 5.0) var skill_warmup_seconds: float = 120.0
+
+## Health bars lost per minute that count as an average player, so the estimate is 1.0.
+@export_range(0.05, 20.0, 0.05) var skill_reference_load: float = 1.0
+
+## Load added per death per minute, in the same unit as damage taken per minute.
+@export_range(0.0, 20.0, 0.1) var skill_death_weight: float = 2.0
+
+## Load removed per revive performed per minute.
+@export_range(0.0, 20.0, 0.1) var skill_revive_weight: float = 0.5
+
+## Load removed per kill per minute. 0 ignores kills, which is the default on purpose.
+@export_range(0.0, 5.0, 0.01) var skill_kill_weight: float = 0.0
+
+@export_group("Difficulty")
+
+## Whether the difficulty multipliers are published. Off = both read 1.0.
+@export var difficulty_enabled: bool = false
+
+## Named preset: easy, normal, hard or nightmare. See [DotNpcDirectorDifficulty].
+@export var difficulty_preset: String = "normal"
+
+## Numeric dial, 1.0 being normal. Negative = use the preset instead.
+@export_range(-1.0, 4.0, 0.05) var difficulty_dial: float = -1.0
+
+## Change in enemy accuracy per unit of dial away from 1.0.
+@export_range(0.0, 1.0, 0.01) var difficulty_accuracy_per_dial: float = 0.25
+
+## Change in enemy damage per unit of dial away from 1.0.
+@export_range(0.0, 1.0, 0.01) var difficulty_damage_per_dial: float = 0.3
+
+@export_group("Specials")
+
+## Whether the kinds in [member special_kinds] are limited by a cooldown budget.
+@export var specials_enabled: bool = false
+
+## Population ids that count as special or elite. The rest are never limited.
+@export var special_kinds: Array[StringName] = []
+
+## Seconds to earn one special spawn.
+@export_range(1.0, 600.0, 1.0) var special_cooldown_seconds: float = 45.0
+
+## Most special spawns that can be banked while none are wanted.
+@export_range(1, 20, 1) var special_budget_cap: int = 2
+
+## Most specials alive at once. 0 = no limit beyond the budget.
+@export_range(0, 50, 1) var special_max_alive: int = 2
+
 
 func env_prefix() -> String:
 	return "DOT_DIRECTOR_"
@@ -164,6 +228,20 @@ func validate() -> DotResult:
 			DotError.CODE_INVALID,
 			"A peak stress of zero peaks immediately and for ever.",
 			"%.2f" % peak_stress
+		)
+
+	if skill_min > 1.0 or skill_max < 1.0:
+		return DotResult.fail(
+			DotError.CODE_INVALID,
+			"The skill bounds must straddle 1.0, or a new player is already scaled.",
+			"%.2f to %.2f" % [skill_min, skill_max]
+		)
+
+	if difficulty_enabled and difficulty_dial < 0.0 and not DotNpcDirectorDifficulty.has_preset(difficulty_preset):
+		return DotResult.fail(
+			DotError.CODE_INVALID,
+			"The difficulty preset is not one of the known names.",
+			difficulty_preset
 		)
 
 	return DotResult.success(null)

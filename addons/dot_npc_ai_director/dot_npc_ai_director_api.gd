@@ -9,5 +9,6 @@ extends RefCounted
 # 1: everything before this file existed (an absent file reads as 1).
 # 2: DotNpcDirectorWaves, a hold-out's schedule: ROUNDS (waves cleared by killing them),
 #    CYCLE (days and nights) and CLOCK; begin, tick, take, give_back, strength, daylight.
-const LEVEL := 2
+# 3: skill estimate, difficulty multipliers and the specials budget (all off by default).
+const LEVEL := 3
 const OLDEST := 1

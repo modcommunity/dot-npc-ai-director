@@ -45,6 +45,9 @@ var travelled: float = 0.0
 ## health fraction is a single number a game already has and cannot forget to update.
 var _last_health: float = 1.0
 
+## Health fraction lost on the latest [method advance].
+var last_loss: float = 0.0
+
 var _last_position: Vector3 = Vector3.ZERO
 
 var _seeded: bool = false
@@ -82,6 +85,7 @@ func advance(
 
 	var lost := maxf(_last_health - health_fraction, 0.0)
 	_last_health = health_fraction
+	last_loss = lost
 
 	# Only the horizontal. A player falling down a lift shaft covers a great deal of
 	# distance and has made no progress at all, and the relax should not end because of
