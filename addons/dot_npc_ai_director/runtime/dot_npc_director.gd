@@ -71,6 +71,9 @@ enum Phase {
 ## Set false to leave the population exactly where it is. For a scripted set piece.
 @export var enabled: bool = true
 
+## While this grace runs the director spawns and reclaims nothing; the game ticks it.
+var grace: DotNpcDirectorGrace = null
+
 ## The spawner, resolved. Assignable directly for a host that has one to hand.
 var spawner: DotNpcSpawner = null
 
@@ -285,6 +288,9 @@ func player_count() -> int:
 
 func tick(delta: float) -> void:
 	if spawner == null or not enabled:
+		return
+
+	if grace != null and grace.is_active():
 		return
 
 	_now += delta

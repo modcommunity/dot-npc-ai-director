@@ -14,13 +14,13 @@ extends Node
 
 const BODY := "res://fixtures/npc_body.tscn"
 
-const CHECKS := 77
+const CHECKS := 82
 
 ## Sections entered against sections that ran to their last line, and against this. A
 ## runtime error inside a section aborts that function and nothing says so; a section that
 ## bailed out early after a failed guard is counted as not finished on purpose. The CHECKS
 ## total is the other half — see docs/testing.md.
-const SECTIONS := 18
+const SECTIONS := 19
 
 var _passed := 0
 var _failed := 0
@@ -58,6 +58,7 @@ func _run() -> void:
 	_test_weighting()
 	_test_reclaim_behind()
 	_test_players_leaving()
+	_test_grace()
 	_test_waves_rounds()
 	_test_waves_cycle()
 	_test_waves_clock()
@@ -763,6 +764,32 @@ func _test_players_leaving() -> void:
 		"now %s" % director.phase_name()
 	)
 
+	director.queue_free()
+	spawner.queue_free()
+	_done()
+
+
+func _test_grace() -> void:
+	_section("grace")
+	var spawner := _spawner()
+	var director := _director(spawner, _rules())
+	director.report_player(&"alice", Vector3.ZERO, 1.0)
+	var grace := DotNpcDirectorGrace.new()
+	director.grace = grace
+	var ended := [0]
+	grace.ended.connect(func(_skipped: bool) -> void: ended[0] += 1)
+	_check(not grace.begin(0.0) and not grace.is_active(), "a grace of zero seconds does not run")
+	_check(grace.begin(2.0) and grace.is_active(), "a grace runs")
+	for i in 15:
+		director.tick(0.1)
+	_check(grace.is_active() and spawner.all_npcs().is_empty(), "the director spawns nothing while it runs")
+	grace.tick(2.0)
+	_check(not grace.is_active() and ended[0] == 1, "it ends once, when it runs out")
+	var spawned := 0
+	for i in 400:
+		director.tick(0.1)
+	spawned = spawner.all_npcs().size()
+	_check(spawned > 0, "and the director spawns after it", "%d spawned" % spawned)
 	director.queue_free()
 	spawner.queue_free()
 	_done()

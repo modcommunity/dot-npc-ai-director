@@ -26,6 +26,7 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 | --- | --- |
 | `addons/dot_npc_ai_director/core/dot_npc_director_stress.gd` | `DotNpcDirectorStress`: the estimate of what the players are experiencing |
 | `addons/dot_npc_ai_director/core/dot_npc_director_flow.gd` | `DotNpcDirectorFlow`: the map's critical path as a distance along a line |
+| `addons/dot_npc_ai_director/core/dot_npc_director_grace.gd` | `DotNpcDirectorGrace`: a start-of-round countdown; set as `director.grace`, the director spawns nothing while it runs |
 | `addons/dot_npc_ai_director/core/dot_npc_director_rules.gd` | `DotNpcDirectorRules`: every number, a `DotConfig` |
 | `addons/dot_npc_ai_director/core/dot_npc_director_waves.gd` | `DotNpcDirectorWaves`: a hold-out's schedule (waves, days and nights, a clock) |
 | `addons/dot_npc_ai_director/core/dot_wave_set.gd` | `DotWaveSet`: a `waves` profile (kind `waves`, `cfg/game/<game>/waves/<id>.yml`) resolved to a `DotWaveSpec` per wave; ranges, `last`, difficulty, validation, the `wave_resolved` hook, the per-map `progress` signal ([waves](docs/waves.md)) |
