@@ -29,6 +29,7 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 | `addons/dot_npc_ai_director/core/dot_npc_director_grace.gd` | `DotNpcDirectorGrace`: a start-of-round countdown; set as `director.grace`, the director spawns nothing while it runs |
 | `addons/dot_npc_ai_director/core/dot_npc_director_rules.gd` | `DotNpcDirectorRules`: every number, a `DotConfig` |
 | `addons/dot_npc_ai_director/core/dot_npc_director_waves.gd` | `DotNpcDirectorWaves`: a hold-out's schedule (waves, days and nights, a clock) |
+| `addons/dot_npc_ai_director/core/dot_npc_stuck_rescue.gd` | `DotNpcStuckRescue`: per-NPC progress toward the players, answering NONE, REPATH or RELOCATE after configurable stalls (shorter when few NPCs remain); the game does the repath and the move |
 | `addons/dot_npc_ai_director/core/dot_wave_set.gd` | `DotWaveSet`: a `waves` profile (kind `waves`, `cfg/game/<game>/waves/<id>.yml`) resolved to a `DotWaveSpec` per wave; ranges, `last`, difficulty, validation, the `wave_resolved` hook, the per-map `progress` signal ([waves](docs/waves.md)) |
 | `addons/dot_npc_ai_director/tools/waves_check.gd` | the headless validator for every wave set of a game |
 | `cfg/addons/dot_npc_ai_director/waves/hold.yml` | the neutral default set a game `extends` |

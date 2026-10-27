@@ -8,8 +8,8 @@ extends Node
 
 const BODY := "res://fixtures/npc_body.tscn"
 
-const CHECKS := 28
-const SECTIONS := 6
+const CHECKS := 41
+const SECTIONS := 7
 
 var _passed := 0
 var _failed := 0
@@ -36,6 +36,7 @@ func _run() -> void:
 	_test_specials()
 	_test_off_switch()
 	_test_determinism()
+	_test_stuck_rescue()
 
 	print("")
 	print("%d passed, %d failed" % [_passed, _failed])
@@ -53,6 +54,66 @@ func _run() -> void:
 		get_tree().quit(1)
 		return
 	get_tree().quit(1 if _failed > 0 else 0)
+
+
+func _test_stuck_rescue() -> void:
+	_section("stuck infected: repath, then relocate; progress and fights are not stuck")
+	var r := DotNpcStuckRescue.new()
+	_check(r.due(1, 0.0), "an unseen NPC is due at once")
+	_check(r.observe(1, 40.0, 0.0) == DotNpcStuckRescue.NONE and not r.due(1, 0.5) and r.due(1, 1.0), "checks are spaced by the interval")
+	var t := 0.0
+	var seen := []
+	while t < 14.0:
+		t += 1.0
+		var a := r.observe(1, 40.0, t)
+		if a != DotNpcStuckRescue.NONE:
+			seen.append([t, a])
+	_check(seen.size() >= 2 and seen[0] == [6.0, DotNpcStuckRescue.REPATH], "no progress for 6 s: a repath first")
+	_check(seen[1] == [14.0, DotNpcStuckRescue.RELOCATE], "then a relocation at 14 s")
+	_check(r.repaths == 1 and r.relocations == 1, "the counts say so")
+	var again := 0
+	for i in 5:
+		t += 1.0
+		if r.observe(1, 40.0, t) != DotNpcStuckRescue.NONE:
+			again += 1
+	_check(again == 0, "relocating restarts the clock")
+	var p := DotNpcStuckRescue.new()
+	p.observe(2, 40.0, 0.0)
+	var acted := false
+	for i in 40:
+		if p.observe(2, 40.0 - float(i) * 1.5, float(i + 1)) != DotNpcStuckRescue.NONE:
+			acted = true
+	_check(not acted, "closing in is progress")
+	var f := DotNpcStuckRescue.new()
+	f.observe(3, 2.0, 0.0)
+	var fought := false
+	for i in 30:
+		if f.observe(3, 2.0, float(i + 1)) != DotNpcStuckRescue.NONE:
+			fought = true
+	_check(not fought, "within reach of a survivor is a fight, not a stall")
+	var low := DotNpcStuckRescue.new()
+	low.observe(4, 50.0, 0.0)
+	var first := -1.0
+	for i in 20:
+		if low.observe(4, 50.0, float(i + 1), 3) == DotNpcStuckRescue.REPATH:
+			first = float(i + 1)
+			break
+	_check(first > 0.0 and first <= 2.5, "with few left the waits shrink to a third (repath at %.0f s)" % first)
+	var wander := DotNpcStuckRescue.new()
+	wander.observe(5, 40.0, 0.0)
+	var circled := false
+	for i in 12:
+		if wander.observe(5, 40.0 + float(i % 2) * 3.0, float(i + 1)) == DotNpcStuckRescue.REPATH:
+			circled = true
+	_check(circled, "moving without getting closer still counts as stuck")
+	r.forget(1)
+	_check(r.due(1, 99.0) and r.describe()["tracked"] == 0, "forgotten NPCs are gone")
+	var gone := DotNpcStuckRescue.new()
+	gone.observe(6, 30.0, 0.0)
+	gone.clear()
+	_check(gone.describe()["tracked"] == 0, "clear empties it")
+	_check(r.describe()["relocations"] == 1, "describe reports the totals")
+	_done()
 
 
 func _section(title: String) -> void:
