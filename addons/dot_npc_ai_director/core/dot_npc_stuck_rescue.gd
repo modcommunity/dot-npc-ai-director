@@ -2,7 +2,7 @@ class_name DotNpcStuckRescue
 extends RefCounted
 
 ## Notices an infected that has made no progress toward the survivors, and says what to do next: first
-## repath, then relocate it near them, out of sight.
+## repath, then relocate it near them, out of sight, then (when relocating did not help either) remove it so the caller can re-spawn it.
 ##
 ## [b]Pure bookkeeping on the caller's think tick.[/b] The caller asks [method due] (one dictionary
 ## read) and only then measures the distance to its nearest survivor for [method observe], so a
@@ -16,6 +16,7 @@ extends RefCounted
 const NONE := 0
 const REPATH := 1
 const RELOCATE := 2
+const REMOVE := 3
 
 ## Seconds without progress before a repath, and before a relocation.
 var repath_after: float = 6.0
@@ -28,11 +29,16 @@ var engaged_range: float = 3.0
 var interval: float = 1.0
 ## At or under this many left, the waits shrink to a third. 0 off.
 var low_count: int = 8
+## Relocations without progress in between after which it is removed instead. 0 never removes.
+var remove_after_relocations: int = 2
 
 var repaths: int = 0
 var relocations: int = 0
+var removals: int = 0
 
 var _seen: Dictionary = {}
+## id -> relocations since it last made progress.
+var _moved: Dictionary = {}
 
 
 ## Whether [param id] is worth measuring at [param now].
@@ -48,6 +54,7 @@ func observe(id: int, distance: float, now: float, live_count: int = 99) -> int:
 	if e == null or distance < float((e as Array)[0]) - min_progress or distance <= engaged_range:
 		# [best distance, last progress at, last check at, repathed]
 		_seen[id] = [distance, now, now, false]
+		_moved.erase(id)
 		return NONE
 	var entry: Array = e
 	entry[2] = now
@@ -55,6 +62,12 @@ func observe(id: int, distance: float, now: float, live_count: int = 99) -> int:
 	var stalled := now - float(entry[1])
 	if stalled >= relocate_after * scale:
 		_seen[id] = [distance, now, now, false]
+		var moved := int(_moved.get(id, 0)) + 1
+		_moved[id] = moved
+		if remove_after_relocations > 0 and moved > remove_after_relocations:
+			_moved.erase(id)
+			removals += 1
+			return REMOVE
 		relocations += 1
 		return RELOCATE
 	if stalled >= repath_after * scale and not bool(entry[3]):
@@ -66,11 +79,13 @@ func observe(id: int, distance: float, now: float, live_count: int = 99) -> int:
 
 func forget(id: int) -> void:
 	_seen.erase(id)
+	_moved.erase(id)
 
 
 func clear() -> void:
 	_seen.clear()
+	_moved.clear()
 
 
 func describe() -> Dictionary:
-	return {"tracked": _seen.size(), "repaths": repaths, "relocations": relocations}
+	return {"tracked": _seen.size(), "repaths": repaths, "relocations": relocations, "removals": removals}

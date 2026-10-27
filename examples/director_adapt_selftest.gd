@@ -8,7 +8,7 @@ extends Node
 
 const BODY := "res://fixtures/npc_body.tscn"
 
-const CHECKS := 41
+const CHECKS := 42
 const SECTIONS := 7
 
 var _passed := 0
@@ -77,6 +77,13 @@ func _test_stuck_rescue() -> void:
 		if r.observe(1, 40.0, t) != DotNpcStuckRescue.NONE:
 			again += 1
 	_check(again == 0, "relocating restarts the clock")
+	var rm := DotNpcStuckRescue.new()
+	var acts := []
+	for i in 80:
+		var a2 := rm.observe(9, 40.0, float(i + 1))
+		if a2 == DotNpcStuckRescue.RELOCATE or a2 == DotNpcStuckRescue.REMOVE:
+			acts.append(a2)
+	_check(acts.size() >= 3 and acts[0] == DotNpcStuckRescue.RELOCATE and acts[1] == DotNpcStuckRescue.RELOCATE and acts[2] == DotNpcStuckRescue.REMOVE and rm.removals >= 1, "two relocations that change nothing, then it is removed")
 	var p := DotNpcStuckRescue.new()
 	p.observe(2, 40.0, 0.0)
 	var acted := false
