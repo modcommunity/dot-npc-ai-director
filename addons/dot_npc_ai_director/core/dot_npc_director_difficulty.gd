@@ -2,9 +2,7 @@ class_name DotNpcDirectorDifficulty
 extends RefCounted
 
 ## Maps a difficulty name or dial to the multipliers a host applies to its enemies.
-##
-## The director knows no combat addon: it only publishes numbers, and the host feeds them
-## to whatever decides accuracy and damage.
+## The director knows no combat addon: it only publishes numbers.
 
 ## Preset name -> dial value, 1.0 being normal.
 const PRESETS := {

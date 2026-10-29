@@ -2,10 +2,7 @@ class_name DotWaveSet
 extends RefCounted
 
 ## A hold-out's waves as config: one `waves` profile resolved to a [DotWaveSpec] per wave.
-##
-## A wave with no entry is generated from the formula in [DotNpcDirectorWaves]; the entries
-## only say where a wave differs. The set spawns nothing and loads no NPC: the game gets a
-## spec at wave start and does the rest. Design: docs/waves.md.
+## A wave with no entry is generated from the formula in [DotNpcDirectorWaves]. Design: docs/waves.md.
 
 const ADDON := "dot_npc_ai_director"
 const KIND := "waves"

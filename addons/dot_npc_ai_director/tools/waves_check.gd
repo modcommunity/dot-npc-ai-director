@@ -1,14 +1,8 @@
 extends SceneTree
 
 ## Loads every wave set of a game in every tier and prints each one's problems, for server owners and CI.
-##
-## [codeblock]
-## godot --headless --path . --script res://addons/dot_npc_ai_director/tools/waves_check.gd -- --game=<game> [--roots=a,b] [--check-npcs]
-## [/codeblock]
-##
-## Each set is built once per difficulty it names (and `normal`). Exit 1 if any set fails; a
-## warning alone does not fail. [code]--check-npcs[/code] asks the game's `npc` profiles
-## whether every id a wave names exists. The output ends with [code]WAVES_CHECK sets=N failed=M[/code].
+## Usage: godot --headless --path . --script res://addons/dot_npc_ai_director/tools/waves_check.gd -- --game=<game> [--roots=a,b] [--check-npcs]
+## Exit 1 if any set fails; the output ends with [code]WAVES_CHECK sets=N failed=M[/code].
 
 
 func _init() -> void:

@@ -1,39 +1,9 @@
 class_name DotNpcDirectorWaves
 extends RefCounted
 
-## A hold-out's schedule: quiet stretches and horde stretches, in order, until it is over.
-##
-## [DotNpcDirector] paces a team that is MOVING: it builds up ahead of them and lets them
-## breathe once they have gone far enough. A team that is holding a place does not move, so a
-## relax that waits for distance never ends and the director has nothing to say about when the
-## hold is won. This is the other half: a fixed schedule a game runs a hold-out on, in one of
-## three styles a server owner picks.
-##
-## [codeblock]
-## ROUNDS   quiet, wave 1, quiet, wave 2 ... wave N: each wave a COUNT of enemies, cleared
-##          by killing them, each bigger than the last; the quiet between is the breather
-## CYCLE    day, night 1, day, night 2 ... night N: each night a length of TIME, survived
-##          rather than cleared, each harder than the last; the day is the breather
-## CLOCK    one stretch of time, harder as it goes (0 seconds: as long as anybody lasts)
-## [/codeblock]
-##
-## [b]It spawns nothing and owns nothing.[/b] It says what stage the hold is in, how much of
-## a wave is still owed ([method take]), and how hard this stretch is ([method strength]);
-## the game spawns, and tells it how many of the wave are still alive. So the same schedule
-## drives a horde of commons, a wave of drones or a 2D swarm, and a suite can run it with
-## numbers alone.
-##
-## [b]A wave is released, not dropped.[/b] [method take] hands out the wave a few at a time
-## at [method release_rate], which rises with the wave: wave 1 trickles in and lets a team
-## learn the doors, wave 10 arrives as a flood. A game that spawned a whole wave on its first
-## tick would be spawning a hundred bodies in one frame, and every one of them at the same
-## door.
-##
-## [b]Cleared means dead, with a backstop.[/b] A ROUNDS wave ends when all of it has been
-## released and none of it is left alive. One body stuck behind a crate would then hold the
-## breather off for ever, so a wave also ends [member overtime_seconds] after its last
-## release, and the stage change says so ([member overtime]); what to do with the stragglers
-## is the game's call.
+## A hold-out's schedule: quiet and horde stretches in order, in style ROUNDS (waves cleared by killing), CYCLE (nights survived by time) or CLOCK (one stretch, harder as it goes).
+## Spawns nothing: it says the stage, how much of a wave is owed ([method take]) and how hard it is ([method strength]); [method take] releases a wave a few at a time.
+## A ROUNDS wave also ends [member overtime_seconds] after its last release, so one stuck body cannot hold the breather off.
 
 enum Style { ROUNDS, CYCLE, CLOCK }
 
@@ -147,10 +117,8 @@ var _quiet_own: float = -1.0
 var _first_quiet_pending: bool = false
 
 
-## Builds a schedule from a loaded `waves` profile for [param p_players]. Value: the schedule,
-## with its [DotWaveSet] on [member wave_set]. [param opts] may hold `npc_exists` and
-## `validate_extra` (callables), `wave_resolved` (the game's hook), `map_key` and `rules` (a
-## [DotNpcDirectorRules] the set's `director:` block is applied to).
+## Builds a schedule from a `waves` profile for [param p_players], its [DotWaveSet] on [member wave_set].
+## [param opts] may hold `npc_exists`, `validate_extra`, `wave_resolved`, `map_key` and `rules` ([DotNpcDirectorRules]).
 static func from_profile(profile: DotProfile, p_difficulty: String = "normal", p_players: int = 1, opts: Dictionary = {}) -> DotResult:
 	var res := DotWaveSet.from_profile(profile, p_difficulty, opts.get("npc_exists", Callable()), opts.get("validate_extra", Callable()))
 	if not res.ok:

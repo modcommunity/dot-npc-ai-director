@@ -1,10 +1,7 @@
 extends Node
 
-## Proves wave sets: parse, ranges, `last`, tiers and extends, extra passthrough, refused input, determinism, the map-progress signal and the hookup to the director's rules.
-##
-## [codeblock]
-## godot --headless --path . res://examples/waves_selftest.tscn
-## [/codeblock]
+## Proves wave sets: parse, ranges, `last`, tiers and extends, refused input, determinism and the hookup to the director's rules.
+## Run: godot --headless --path . res://examples/waves_selftest.tscn
 
 const CHECKS := 60
 const SECTIONS := 9

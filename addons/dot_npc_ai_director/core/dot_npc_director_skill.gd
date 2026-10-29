@@ -2,9 +2,7 @@ class_name DotNpcDirectorSkill
 extends RefCounted
 
 ## A slow estimate of how well one player is doing, as a multiplier on their share of the peak.
-##
-## Events are bucketed and folded into an exponential average every sample window, so one
-## bad fight moves the figure a little and a bad hour moves it to the bound.
+## Events fold into an exponential average each sample window, so one bad fight barely moves it.
 
 ## The smoothed multiplier, before warm-up.
 var estimate: float = 1.0

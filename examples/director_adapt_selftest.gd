@@ -1,10 +1,7 @@
 extends Node
 
 ## Proves the skill estimate, difficulty multipliers and specials budget, and that all three are inert when off.
-##
-## [codeblock]
-## godot --headless --path . res://examples/director_adapt_selftest.tscn
-## [/codeblock]
+## Run: godot --headless --path . res://examples/director_adapt_selftest.tscn
 
 const BODY := "res://fixtures/npc_body.tscn"
 

@@ -1,17 +1,9 @@
 class_name DotNpcStuckRescue
 extends RefCounted
 
-## Notices an infected that has made no progress toward the survivors, and says what to do next: first
-## repath, then relocate it near them, out of sight, then (when relocating did not help either) remove it so the caller can re-spawn it.
-##
-## [b]Pure bookkeeping on the caller's think tick.[/b] The caller asks [method due] (one dictionary
-## read) and only then measures the distance to its nearest survivor for [method observe], so a
-## hundred zombies cost a hundred reads a tick and a handful of measurements. The caller does the
-## repath and the move, and logs it ([method describe] counts them): this class holds no NPC.
-##
-## [b]Progress is the best distance reached[/b], not movement: a zombie circling a wall moves and
-## gets nowhere. When few are left ([member low_count]) the waits shrink to a third, because the
-## last five are the ones the team is waiting for.
+## Notices an NPC that makes no progress toward the survivors: repath, then relocate, then remove so the caller can re-spawn it.
+## Pure bookkeeping on the caller's think tick: ask [method due] first, measure distance only then. Progress is the best distance reached, not movement.
+## When few are left ([member low_count]) the waits shrink to a third.
 
 const NONE := 0
 const REPATH := 1

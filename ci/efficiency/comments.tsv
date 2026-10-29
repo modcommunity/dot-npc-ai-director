@@ -4,10 +4,8 @@ addons/dot_npc_ai_director/core/dot_npc_director_flow.gd::long_block	3
 addons/dot_npc_ai_director/core/dot_npc_director_rules.gd::long_block	12
 addons/dot_npc_ai_director/core/dot_npc_director_stress.gd::long_block	5
 addons/dot_npc_ai_director/core/dot_npc_director_waves.gd::banner	3
-addons/dot_npc_ai_director/core/dot_npc_director_waves.gd::long_block	1
-addons/dot_npc_ai_director/dot_npc_ai_director_api.gd::long_block	1
 addons/dot_npc_ai_director/dot_npc_ai_director_plugin.gd::long_block	1
 addons/dot_npc_ai_director/runtime/dot_npc_director.gd::banner	6
 addons/dot_npc_ai_director/runtime/dot_npc_director.gd::long_block	15
-examples/director_selftest.gd::banner	5
+examples/director_selftest.gd::banner	4
 examples/director_selftest.gd::long_block	3
