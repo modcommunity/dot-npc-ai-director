@@ -1,4 +1,4 @@
-extends Node
+extends "director_selftest_base.gd"
 
 ## Proves the pacing cycles, the placement refuses, and the stress is the players'.
 ##
@@ -11,8 +11,6 @@ extends Node
 ## relax that never ends, a peak that never comes, a wave placed in front of somebody's
 ## face, and a reclaim that deletes the ambush the party is walking into. All four are
 ## here, driven by a stress figure fed the way a real game would feed it.
-
-const BODY := "res://fixtures/npc_body.tscn"
 
 const CHECKS := 82
 
@@ -27,8 +25,6 @@ var _failed := 0
 var _failures := PackedStringArray()
 var _entered := 0
 var _completed := 0
-
-var _world: Node3D = null
 
 
 func _ready() -> void:
@@ -107,73 +103,6 @@ func _check(ok: bool, what: String, detail: String = "") -> void:
 		var line := what if detail == "" else "%s (%s)" % [what, detail]
 		_failures.append(line)
 		print("  FAIL  %s" % line)
-
-
-# --- Builders -----------------------------------------------------------------
-
-func _catalogue() -> DotNpcCatalogue:
-	var cat := DotNpcCatalogue.new()
-
-	var zombie := DotNpcDef.make(&"zombie", BODY)
-	zombie.require_line_of_sight = false
-	cat.add(zombie)
-
-	var brute := DotNpcDef.make(&"brute", BODY)
-	brute.require_line_of_sight = false
-	brute.cost = 4
-	cat.add(brute)
-
-	return cat
-
-
-func _spawner() -> DotNpcSpawner:
-	var spawner := DotNpcSpawner.new()
-	spawner.catalogue = _catalogue()
-
-	var limits := DotNpcLimits.new()
-	limits.spawn_interval = 0.0
-	limits.require_navigable_spawn = false
-	limits.world_budget = 0
-	limits.per_kind_cap = 0
-	limits.reclaim_distance = 0.0
-	spawner.limits = limits
-	spawner.authoritative = true
-
-	_world.add_child(spawner)
-
-	return spawner
-
-
-## A straight corridor of spawn points, 200 m long.
-func _corridor() -> PackedVector3Array:
-	var points := PackedVector3Array()
-
-	for i in 41:
-		points.append(Vector3(0, 0, -5.0 * float(i)))
-
-	return points
-
-
-func _director(spawner: DotNpcSpawner, rules: DotNpcDirectorRules = null) -> DotNpcDirector:
-	var director := DotNpcDirector.new()
-	director.spawner = spawner
-	director.rules = rules if rules != null else _rules()
-	director.population = [&"zombie", &"zombie", &"zombie", &"brute"]
-	director.spawn_points = _corridor()
-	director.flow = DotNpcDirectorFlow.new(PackedVector3Array([
-		Vector3(0, 0, 0), Vector3(0, 0, -200)
-	]))
-	_world.add_child(director)
-	return director
-
-
-## Rules with the sight test off, because there is no level in this suite to be hidden
-## behind and every point would otherwise be visible from everywhere.
-func _rules() -> DotNpcDirectorRules:
-	var rules := DotNpcDirectorRules.new()
-	rules.spawn_out_of_sight = false
-	rules.spawn_interval = 0.0
-	return rules
 
 
 # --- Rules and stress ---------------------------------------------------------
