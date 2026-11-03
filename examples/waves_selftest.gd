@@ -3,7 +3,7 @@ extends Node
 ## Proves wave sets: parse, ranges, `last`, tiers and extends, refused input, determinism and the hookup to the director's rules.
 ## Run: godot --headless --path . res://examples/waves_selftest.tscn
 
-const CHECKS := 60
+const CHECKS := 61
 const SECTIONS := 9
 const GOOD := ["res://cfg", "res://fixtures/cfg"]
 const SERVER := ["res://cfg", "res://fixtures/cfg", "res://fixtures/cfg_server"]
@@ -86,6 +86,7 @@ func _wset(id: String, roots: Array = GOOD, difficulty := "normal", cmdline: Arr
 
 func _test_parse() -> void:
 	_section("parse")
+	_check(DotWaveSet.profile_schemas()["waves"]["schema"].size() == DotWaveSet.schema().size(), "profile_check finds the waves kind")
 	var s := _wset("school_hold")
 	_check(s.id == "school_hold" and s.count == 10 and s.style == DotNpcDirectorWaves.Style.ROUNDS, "the game's set loads with its count and style")
 	_check(s.pool == {"common": 10.0, "tg_common": 10.0, "tg_crawler": 2.0}, "the pool merges over the hold set it extends", str(s.pool))

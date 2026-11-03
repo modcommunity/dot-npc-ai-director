@@ -105,6 +105,11 @@ static func schema() -> Array:
 	]
 
 
+## Kind to schema for dot-profile's profile_check.
+static func profile_schemas() -> Dictionary:
+	return {KIND: {"schema": schema(), "children": {}}}
+
+
 ## The profile set for a game's wave sets (`cfg/game/<game>/waves/<id>.yml` over the addon's).
 static func make_set(game: String, roots: PackedStringArray = PackedStringArray(), cmdline: PackedStringArray = PackedStringArray()) -> DotProfileSet:
 	var s := DotProfileSet.create(ADDON, game, KIND, schema())
