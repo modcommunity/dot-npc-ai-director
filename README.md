@@ -131,6 +131,8 @@ Populations are **per player**, so the same rules work for one player or eight.
 ```bash
 godot --headless --path . --import
 godot --headless --path . res://examples/director_selftest.tscn
+godot --headless --path . res://examples/director_adapt_selftest.tscn
+godot --headless --path . res://examples/waves_selftest.tscn
 ```
 
 ## License
