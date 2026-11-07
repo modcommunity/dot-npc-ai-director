@@ -12,13 +12,13 @@ extends "director_selftest_base.gd"
 ## face, and a reclaim that deletes the ambush the party is walking into. All four are
 ## here, driven by a stress figure fed the way a real game would feed it.
 
-const CHECKS := 82
+const CHECKS := 92
 
 ## Sections entered against sections that ran to their last line, and against this. A
 ## runtime error inside a section aborts that function and nothing says so; a section that
 ## bailed out early after a failed guard is counted as not finished on purpose. The CHECKS
 ## total is the other half — see docs/testing.md.
-const SECTIONS := 19
+const SECTIONS := 20
 
 var _passed := 0
 var _failed := 0
@@ -58,6 +58,7 @@ func _run() -> void:
 	_test_waves_rounds()
 	_test_waves_cycle()
 	_test_waves_clock()
+	_test_authored_sites()
 
 	print("")
 	print("%d passed, %d failed" % [_passed, _failed])
@@ -873,3 +874,63 @@ func _run_waves(w: DotNpcDirectorWaves, seconds: float, alive: int) -> void:
 	while t < seconds - 0.0001:
 		w.tick(0.1, alive, w.players)
 		t += 0.1
+
+
+func _test_authored_sites() -> void:
+	_section("authored sites")
+
+	var spawner := _spawner()
+	var rules := _rules()
+	rules.spawn_min_distance = 10.0
+	rules.spawn_max_distance = 60.0
+
+	var director := _director(spawner, rules)
+	director.flow = null
+	director.report_player(&"alice", Vector3.ZERO, 1.0)
+
+	var mid := {"id": "mid", "position": Vector3(0, 0, -35)}
+	var near := {"id": "near", "position": Vector3(0, 0, -20)}
+	var far := {"id": "far", "position": Vector3(0, 0, -55)}
+
+	_check(director.set_sites([mid, near, far, {"id": "no position"}]) == 3,
+		"a site without a position is dropped")
+	_check(director.choose_spawn_point().value == Vector3(0, 0, -35) and director.last_site == mid,
+		"with no rules the middle of the band wins and last_site names it")
+
+	mid["enabled"] = false
+	_check(director.choose_spawn_point().value != Vector3(0, 0, -35), "a disabled site is never used")
+	mid["enabled"] = true
+
+	mid["weight"] = 0.0
+	_check(director.choose_spawn_point().value != Vector3(0, 0, -35), "weight 0 vetoes")
+	mid["weight"] = 1.0
+
+	near["weight"] = 3.0
+	_check(director.choose_spawn_point().value == Vector3(0, 0, -20), "a heavier site is preferred")
+	near["weight"] = 1.0
+
+	mid["phases"] = ["relax"]
+	var vetoed: bool = director.choose_spawn_point().value != Vector3(0, 0, -35)
+	mid["phases"] = ["build_up"]
+	_check(vetoed and director.choose_spawn_point().value == Vector3(0, 0, -35),
+		"a site listing other phases is vetoed, and used in its own phase")
+	mid["phases"] = []
+
+	mid["max_alive"] = 2
+	director.site_alive_fn = func(_site: Variant) -> int: return 2
+	_check(director.choose_spawn_point().value != Vector3(0, 0, -35), "a site at max_alive is vetoed")
+	director.site_alive_fn = func(_site: Variant) -> int: return 1
+	_check(director.choose_spawn_point().value == Vector3(0, 0, -35), "and used below it")
+	mid["max_alive"] = 0
+
+	mid["min_player_distance"] = 50.0
+	_check(director.choose_spawn_point().value != Vector3(0, 0, -35),
+		"a site's own distance band replaces the rules'")
+	mid["min_player_distance"] = 0.0
+
+	director.site_filter = func(site: Variant, _point: Vector3) -> bool: return site != mid
+	_check(director.choose_spawn_point().value != Vector3(0, 0, -35), "the game's site_filter vetoes")
+
+	director.queue_free()
+	spawner.queue_free()
+	_done()

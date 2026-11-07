@@ -77,7 +77,7 @@ That is deliberately one branch in one function rather than a flag on this class
 
 | To change | Where |
 | --- | --- |
-| Where a wave may appear | `DotNpcDirector.spawn_points`, or `set_spawn_points_from_nav` |
+| Where a wave may appear | `DotNpcDirector.spawn_points`, `set_spawn_points_from_nav`, or `set_sites` for authored sites with per-site rules (enabled, weight, phases, max_alive via `site_alive_fn`, sight, distance band, `site_filter`; duck-typed, so a DotSpawnPointDef fits without a dot-spawn dependency) |
 | Every number the director has an opinion about | `DotNpcDirectorRules`, layered like every `DotConfig` |
 | What may be spawned, and in what proportion | `DotNpcDirector.population` |
 | Where "ahead" is | `DotNpcDirectorFlow`, from the map's critical path |
