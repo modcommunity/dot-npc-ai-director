@@ -89,6 +89,23 @@ var flow: DotNpcDirectorFlow = null
 ## that wants better passes better.
 var spawn_points: PackedVector3Array = PackedVector3Array()
 
+## Optional per-point rules, parallel to [member spawn_points]; see [method set_sites].
+var _sites: Array = []
+
+## Called as [code]site_alive_fn.call(site) -> int[/code]: how many of this site's NPCs are
+## alive, for a site's [code]max_alive[/code]. Unset means max_alive is not enforced.
+var site_alive_fn: Callable = Callable()
+
+## Called as [code]site_filter.call(site, point) -> bool[/code] after the built-in rules;
+## false vetoes the site. For a game's own rule (a team, a class, a door state).
+var site_filter: Callable = Callable()
+
+## The site the last successful [method choose_spawn_point] used, or null.
+var last_site: Variant = null
+
+## Score, in metres of preference, that one unit of a site's [code]weight[/code] above 1 is worth.
+const SITE_WEIGHT_METRES := 10.0
+
 ## Player id -> DotNpcDirectorStress.
 var _players: Dictionary = {}
 
@@ -116,6 +133,76 @@ var _specials := DotNpcDirectorSpecials.new()
 var wave_count: int = 0
 var spawn_count: int = 0
 var refused_placements: int = 0
+
+
+## Takes authored spawn sites with per-site rules instead of bare points.
+##
+## [b]Duck-typed, so this addon does not depend on dot-spawn.[/b] A site is an object with
+## properties, or a Dictionary with keys, named [code]position[/code] (Vector3, required),
+## [code]enabled[/code], [code]weight[/code] (0 vetoes, above 1 is preferred),
+## [code]max_alive[/code] (0 is no limit; needs [member site_alive_fn]), [code]phases[/code]
+## (lower-case phase names such as [code]relax[/code]; empty is any),
+## [code]sight[/code] ([code]hidden_from_players[/code], [code]visible_to_players[/code] or
+## [code]any[/code]) and [code]min_player_distance[/code] / [code]max_player_distance[/code]
+## (above 0 replace the rules' band for that site). A DotSpawnPointDef fits as it is.
+## Returns how many sites were kept (those with a Vector3 position).
+func set_sites(sites: Array) -> int:
+	var kept: Array = []
+	var points := PackedVector3Array()
+
+	for site in sites:
+		var position: Variant = _site_get(site, "position", null)
+
+		if position is Vector3:
+			kept.append(site)
+			points.append(position)
+
+	_sites = kept
+	spawn_points = points
+	return kept.size()
+
+
+static func _site_get(site: Variant, key: String, fallback: Variant) -> Variant:
+	if site is Dictionary:
+		return (site as Dictionary).get(key, fallback)
+
+	if site is Object:
+		var value: Variant = (site as Object).get(key)
+		return fallback if value == null else value
+
+	return fallback
+
+
+## Whether [param site] is allowed in the current phase and by its cap and filter.
+## Distance and sight are the caller's, because sight costs a raycast.
+func _site_allows(site: Variant) -> bool:
+	if not bool(_site_get(site, "enabled", true)):
+		return false
+
+	if float(_site_get(site, "weight", 1.0)) <= 0.0:
+		return false
+
+	var phases: Variant = _site_get(site, "phases", [])
+
+	if phases is Array and not (phases as Array).is_empty():
+		var current := String(Phase.keys()[_phase]).to_lower()
+		var listed := false
+
+		for phase_name in phases:
+			listed = listed or String(phase_name).to_lower() == current
+
+		if not listed:
+			return false
+
+	var cap := int(_site_get(site, "max_alive", 0))
+
+	if cap > 0 and site_alive_fn.is_valid() and int(site_alive_fn.call(site)) >= cap:
+		return false
+
+	if site_filter.is_valid():
+		return bool(site_filter.call(site, _site_get(site, "position", Vector3.ZERO)))
+
+	return true
 
 
 ## Fills [member spawn_points] from a map's navigation, thinned.
@@ -596,14 +683,34 @@ func choose_spawn_point() -> DotResult:
 	var best_score := -INF
 	var found := false
 	var best_is_behind := false
+	var best_site: Variant = null
+	var use_sites := not _sites.is_empty() and _sites.size() == spawn_points.size()
 
-	for point in spawn_points:
+	for index in spawn_points.size():
+		var point := spawn_points[index]
+		var site: Variant = _sites[index] if use_sites else null
 		var nearest := _distance_to_nearest_player(point)
+		var min_distance := rules.spawn_min_distance
+		var max_distance := rules.spawn_max_distance
+		var sight := "any"
 
-		if nearest < rules.spawn_min_distance or nearest > rules.spawn_max_distance:
+		if use_sites:
+			if not _site_allows(site):
+				continue
+
+			var site_min := float(_site_get(site, "min_player_distance", 0.0))
+			var site_max := float(_site_get(site, "max_player_distance", 0.0))
+			min_distance = site_min if site_min > 0.0 else min_distance
+			max_distance = site_max if site_max > 0.0 else max_distance
+			sight = String(_site_get(site, "sight", "any"))
+
+		if nearest < min_distance or nearest > max_distance:
 			continue
 
-		if rules.spawn_out_of_sight and _is_visible_to_any_player(point):
+		if sight == "any":
+			if rules.spawn_out_of_sight and _is_visible_to_any_player(point):
+				continue
+		elif _is_visible_to_any_player(point) != (sight == "visible_to_players"):
 			continue
 
 		var behind := false
@@ -624,12 +731,16 @@ func choose_spawn_point() -> DotResult:
 			# No route: prefer the middle of the legal band. In an arena "ahead" has no
 			# meaning and the useful preference is "not right on top of them, not so far
 			# away it never arrives".
-			var middle := (rules.spawn_min_distance + rules.spawn_max_distance) * 0.5
+			var middle := (min_distance + max_distance) * 0.5
 			score = -absf(nearest - middle)
+
+		if use_sites:
+			score += (float(_site_get(site, "weight", 1.0)) - 1.0) * SITE_WEIGHT_METRES
 
 		if score > best_score:
 			best_score = score
 			best = point
+			best_site = site
 			best_is_behind = behind
 			found = true
 
@@ -643,6 +754,7 @@ func choose_spawn_point() -> DotResult:
 	if best_is_behind:
 		_behind_spawns += 1
 
+	last_site = best_site
 	return DotResult.success(best)
 
 
