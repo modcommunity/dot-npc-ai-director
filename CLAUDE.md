@@ -42,7 +42,7 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 
 ## Running and testing
 
-The family's two steps ([game-dev/CLAUDE.md](../../CLAUDE.md#validating-anything)), parsing only this repository's scripts, then each of the three suites in the table above, `timeout 300 godot --headless --path . res://examples/<suite>.tscn` (`director_selftest`, `director_adapt_selftest`, `waves_selftest`).
+The family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything)), parsing only this repository's scripts, then each of the three suites in the table above, `timeout 300 godot --headless --path . res://examples/<suite>.tscn` (`director_selftest`, `director_adapt_selftest`, `waves_selftest`).
 
 The suite turns the out-of-sight rule off (`spawn_out_of_sight = false`), and says so: there is no level in it to hide behind, so every point is visible from everywhere and leaving it on would test the raycast rather than the pacing.
 
