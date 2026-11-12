@@ -155,7 +155,7 @@ var res := DotNpcDirectorWaves.from_profile(profiles.load_profile("school_hold")
 
 Choices where the design was open (Christian has not answered; change them here and in `dot_wave_set.gd` together):
 
-- The YAML reader refuses flow mappings (`{a: 1}`), so every example above is written in block style in the files; only flow sequences of scalars work.
+- The YAML reader reads one-line flow mappings (`{a: 1}`) from dot-core v0.1.46; the examples above stay in block style, which an older dot-core also reads.
 - `cycle` sets take `nights:` and every other style takes `waves:`; the wrong one is an error, not ignored. `seconds` is the night length (cycle) or the whole hold (clock, 0 is endless); `twilight` is the dawn and dusk ramp.
 - A cycle or clock set has no head count: `spec.size` is 0 and the game reads the schedule's `strength()`.
 - Merge order for one wave: the set's values, then every covering range from widest to narrowest, then the number, then `last`. `last` is the final wave: `count`, or 1 for a clock. A dictionary key (`specials`, `extra`) merges key by key across tiers, so a server range that sets one special keeps the game's others; a `pool` replaces, unless every key starts with `+`, which adds.

@@ -1,5 +1,5 @@
 # The neutral hold-out: ten rounds, the numbers DotNpcDirectorWaves has always had.
-# Block style only: the family's YAML reader refuses flow mappings such as {a: 1}.
+# Block style; dot-core v0.1.46 also reads flow mappings such as {a: 1}.
 style: rounds
 count: 10
 first_quiet: 30
