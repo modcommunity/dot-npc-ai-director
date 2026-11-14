@@ -51,7 +51,7 @@ director.forget_player(player.id)
 
 Health is reported as a **fraction**, not as damage. The director works out the damage from the change, so your game does not have to report it from every place that deals damage.
 
-`flow` is the route through the level. With one, the director spawns ahead of the players (40 m by default, and only 1 spawn in 5 from behind) and cleans up enemies the players have left behind. Without one, as in an arena, it spawns in the middle of its distance band. You can also set `spawn_points` yourself instead of reading them from the navigation.
+`flow` is the route through the level. With one, the director spawns ahead of the players (40 m by default, and only 1 spawn in 5 from behind) and cleans up enemies the players have left behind. Without one, as in a single open room, it spawns in the middle of its distance band. You can also set `spawn_points` yourself instead of reading them from the navigation.
 
 A spawn point must be between 18 m and 70 m from every player and, by default, out of their sight. The sight check uses raycasts in the spawner's physics world, so it needs a level with collision. With no physics world every point counts as hidden.
 
@@ -59,7 +59,7 @@ Signals: `phase_changed(from, to)` and `wave_spawned(at, count)`. `describe_line
 
 ## Holding a place: waves, nights or a clock
 
-The loop above paces a team that is moving. A team holding a place (a school, a fort, an arena) wants a schedule instead, and `DotNpcDirectorWaves` is one, in three styles:
+The loop above paces a team that is moving. A team holding a place (a school, a fort, an open yard) wants a schedule instead, and `DotNpcDirectorWaves` is one, in three styles:
 
 | Style | What a horde stretch is | When it ends | The quiet between |
 | --- | --- | --- | --- |
