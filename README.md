@@ -101,7 +101,7 @@ Populations are per player, so the same rules suit one player or many.
 | `peak_per_player` | 12 | Enemies alive at the peak, per player |
 | `build_up_per_player` | 5 | Enemies alive while building up, per player |
 | `relax_per_player` | 1.5 | Enemies alive while relaxing, per player |
-| `absolute_cap` | 60 | Most enemies alive whatever the player count. 0 leaves it to the spawner |
+| `absolute_cap` | 60 | Most enemies alive whatever the player count. Default 60, 0 = unlimited (left to the spawner) |
 | `peak_stress` | 0.75 | Stress (0 to 1) that ends the build-up |
 | `sustain_seconds` | 4 | How long the peak is held |
 | `fade_seconds` | 8 | How long the population takes to fall back |
@@ -113,7 +113,7 @@ Populations are per player, so the same rules suit one player or many.
 | `spawn_out_of_sight` | true | Only spawn where no player can see |
 | `spawn_ahead` | 40 | How far ahead along the route to prefer (m) |
 | `behind_fraction` | 0.2 | Share of spawns allowed behind the players |
-| `spawn_burst` | 3 | Most enemies spawned in one go |
+| `spawn_burst` | 3 | Most enemies spawned in one go. Default 3, 0 = unlimited |
 | `spawn_interval` | 0.5 | Seconds between spawn attempts |
 | `reclaim_interval` | 2.0 | Seconds between clean-ups of enemies left behind. 0 is every tick |
 | `stress_decay` | 0.08 | Stress drained per second |

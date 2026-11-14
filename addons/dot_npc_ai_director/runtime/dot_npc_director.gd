@@ -585,7 +585,7 @@ func _spawn_toward_target() -> void:
 	if wanted <= 0:
 		return
 
-	var burst := mini(wanted, rules.spawn_burst)
+	var burst := mini(wanted, rules.spawn_burst) if rules.spawn_burst > 0 else wanted
 	var placed := 0
 	var at := Vector3.ZERO
 

@@ -35,11 +35,11 @@ extends DotConfig
 ## A handful of wanderers is what keeps a corridor tense.
 @export_range(0.0, 100.0, 0.5) var relax_per_player: float = 1.5
 
-## Ceiling on the population whatever the player count says. 0 = the spawner's own.
+## Ceiling on the population whatever the player count says. 0 = the spawner's own (default 60). Negative is refused by [method validate].
 ##
 ## Belt and braces over [DotNpcLimits]: the spawner refuses past its budget anyway, but
 ## a director that keeps asking is a director burning a spawn attempt per tick.
-@export_range(0, 500, 1) var absolute_cap: int = 60
+@export_range(0, 500, 1, "or_greater") var absolute_cap: int = 60
 
 @export_group("Pacing")
 
@@ -103,7 +103,8 @@ extends DotConfig
 ## [b]A wave arrives over a second or two, not in one frame.[/b] Twelve bodies
 ## instantiated in one tick is a visible hitch on any machine, and it is the frame the
 ## player is about to need.
-@export_range(1, 50, 1) var spawn_burst: int = 3
+## Default 3, 0 = unlimited (the whole wave in one tick); negative is refused by [method validate].
+@export_range(0, 50, 1, "or_greater") var spawn_burst: int = 3
 
 ## Seconds between the director's spawn attempts.
 @export_range(0.0, 10.0, 0.05) var spawn_interval: float = 0.5
@@ -209,6 +210,13 @@ func cli_prefix() -> String:
 
 
 func validate() -> DotResult:
+	if absolute_cap < 0 or spawn_burst < 0:
+		return DotResult.fail(
+			DotError.CODE_INVALID,
+			"absolute_cap and spawn_burst may not be negative; 0 means unlimited.",
+			"absolute_cap %d, spawn_burst %d" % [absolute_cap, spawn_burst]
+		)
+
 	if spawn_min_distance >= spawn_max_distance:
 		return DotResult.fail(
 			DotError.CODE_INVALID,

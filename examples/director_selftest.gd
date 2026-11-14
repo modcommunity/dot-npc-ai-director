@@ -12,7 +12,7 @@ extends "director_selftest_base.gd"
 ## face, and a reclaim that deletes the ambush the party is walking into. All four are
 ## here, driven by a stress figure fed the way a real game would feed it.
 
-const CHECKS := 92
+const CHECKS := 94
 
 ## Sections entered against sections that ran to their last line, and against this. A
 ## runtime error inside a section aborts that function and nothing says so; a section that
@@ -121,6 +121,14 @@ func _test_rules() -> void:
 		"a minimum above the maximum is refused",
 		"no spawn point could ever be legal"
 	)
+
+	var wide := DotNpcDirectorRules.new()
+	wide.absolute_cap = 900
+	wide.spawn_burst = 0
+	_check(wide.validate().ok, "a cap past 500 and a burst of 0 (unlimited) are allowed")
+	var negative := DotNpcDirectorRules.new()
+	negative.spawn_burst = -1
+	_check(not negative.validate().ok, "a negative burst is refused, not clamped")
 
 	var inverted := DotNpcDirectorRules.new()
 	inverted.relax_per_player = 40.0
