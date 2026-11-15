@@ -136,41 +136,6 @@ func _site_allows(site: Variant) -> bool:
 	return true
 
 
-) -> int:
-	spawn_points = PackedVector3Array()
-
-	if nav == null or nav.points.is_empty():
-		return 0
-
-	var spacing_sq := minimum_spacing * minimum_spacing
-
-	for i in nav.points.size():
-		if filter != null and not filter.passes(nav.area_of(i), nav.flags_of(i)):
-			continue
-
-		var point := nav.points[i]
-		var too_close := false
-
-		for kept in spawn_points:
-			if kept.distance_squared_to(point) < spacing_sq:
-				too_close = true
-				break
-
-		if too_close:
-			continue
-
-		spawn_points.append(point)
-
-	DotLog.info(CHANNEL, "spawn points taken from navigation", {
-		"map": String(nav.map_id),
-		"points": nav.points.size(),
-		"kept": spawn_points.size(),
-		"spacing": minimum_spacing,
-	})
-
-	return spawn_points.size()
-
-
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return

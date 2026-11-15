@@ -1,21 +1,14 @@
 @tool
 extends Node
 
-## What the game tells a [DotNpcDirector]: where things may appear and who is playing.
-##
-## The part of the director that only records: spawn points and sites, the players'
-## positions, health and skill records, and the plain questions about them. The pacing
-## that reads these is [DotNpcDirector]'s own.
+## What the game tells a [DotNpcDirector]: spawn points and sites, the players' positions, health and
+## skill records, and the plain questions about them. The pacing that reads these is [DotNpcDirector]'s own.
 
 const CHANNEL := "npc.director"
 
-## Candidate spawn positions, in world space. Usually a map's nav data points.
-##
-## [b]Given rather than derived, because "where may something appear" is a level design
-## question.[/b] A navigable point is not automatically a legal spawn: a game wants its
-## horde coming out of the dark corridor rather than out of the safe room, and only the
-## map knows which is which. `DotNpcNavData.points` is a reasonable default and a game
-## that wants better passes better.
+## Candidate spawn positions, in world space; usually a map's nav data points. Given, not derived: which
+## navigable point is a legal spawn (the dark corridor, not the safe room) is a level design question only the
+## map can answer, so `DotNpcNavData.points` is a default and a game that wants better passes better.
 var spawn_points: PackedVector3Array = PackedVector3Array()
 
 ## Optional per-point rules, parallel to [member spawn_points]; see [method set_sites].
@@ -42,17 +35,9 @@ var _players: Dictionary = {}
 var _skills: Dictionary = {}
 
 
-## Takes authored spawn sites with per-site rules instead of bare points.
-##
-## [b]Duck-typed, so this addon does not depend on dot-spawn.[/b] A site is an object with
-## properties, or a Dictionary with keys, named [code]position[/code] (Vector3, required),
-## [code]enabled[/code], [code]weight[/code] (0 vetoes, above 1 is preferred),
-## [code]max_alive[/code] (0 is no limit; needs [member site_alive_fn]), [code]phases[/code]
-## (lower-case phase names such as [code]relax[/code]; empty is any),
-## [code]sight[/code] ([code]hidden_from_players[/code], [code]visible_to_players[/code] or
-## [code]any[/code]) and [code]min_player_distance[/code] / [code]max_player_distance[/code]
-## (above 0 replace the rules' band for that site). A DotSpawnPointDef fits as it is.
-## Returns how many sites were kept (those with a Vector3 position).
+## Takes authored sites (duck-typed objects or Dictionaries, so no dot-spawn dependency; a DotSpawnPointDef fits) with
+## [code]position[/code] (Vector3, required), [code]enabled[/code], [code]weight[/code] (0 vetoes, above 1 preferred), [code]max_alive[/code] (0 none; needs [member site_alive_fn]), [code]phases[/code] (lower-case, empty is any),
+## [code]sight[/code] (hidden_from_players / visible_to_players / any), [code]min_player_distance[/code] / [code]max_player_distance[/code] (above 0 replace the band). Returns how many had a Vector3 position.
 func set_sites(sites: Array) -> int:
 	var kept: Array = []
 	var points := PackedVector3Array()
@@ -80,36 +65,50 @@ static func _site_get(site: Variant, key: String, fallback: Variant) -> Variant:
 	return fallback
 
 
-## Fills [member spawn_points] from a map's navigation, thinned.
-##
-## The convenience the field's own documentation has always pointed at: a navigable
-## point is the reasonable default and every game was writing this loop. Still an
-## explicit call rather than something the director does on its own, because which
-## points are [i]legal[/i] spawns is a level design question and a game that wants
-## better still passes better.
-##
-## [b][param minimum_spacing] is not a nicety.[/b] [method choose_spawn_point] walks
-## every candidate and, for each one inside the distance band, asks whether a player
-## can see it — which is a raycast. A two-metre grid over a modest map is a few
-## thousand points, so an unthinned list is a few thousand raycasts per wave, several
-## times a minute, on the server. Eight metres is about a room.
-##
-## [param filter] excludes what the map says an NPC should not be standing on:
-## `DotNpcNavFilter.walking_only()` keeps a horde out of the crouch tunnels, and a
-## filter with `exclude_flags` set to `AVOID` keeps it off the ledges.
-##
-## Returns how many points were kept.
+## Fills [member spawn_points] from a map's navigation, thinned to [param minimum_spacing] (not a nicety: each candidate in
+## band costs [method choose_spawn_point] a raycast, so a few thousand unthinned points is a few thousand per wave; 8 m is a room).
+## [param filter] drops what an NPC should not stand on (`DotNpcNavFilter.walking_only()`, `exclude_flags = AVOID`). Returns how many were kept.
 func set_spawn_points_from_nav(
 	nav: DotNpcNavData,
 	minimum_spacing: float = 8.0,
 	filter: DotNpcNavFilter = null
+) -> int:
+	spawn_points = PackedVector3Array()
+
+	if nav == null or nav.points.is_empty():
+		return 0
+
+	var spacing_sq := minimum_spacing * minimum_spacing
+
+	for i in nav.points.size():
+		if filter != null and not filter.passes(nav.area_of(i), nav.flags_of(i)):
+			continue
+
+		var point := nav.points[i]
+		var too_close := false
+
+		for kept in spawn_points:
+			if kept.distance_squared_to(point) < spacing_sq:
+				too_close = true
+				break
+
+		if too_close:
+			continue
+
+		spawn_points.append(point)
+
+	DotLog.info(CHANNEL, "spawn points taken from navigation", {
+		"map": String(nav.map_id),
+		"points": nav.points.size(),
+		"kept": spawn_points.size(),
+		"spacing": minimum_spacing,
+	})
+
+	return spawn_points.size()
 
 
-## One player's position and health this tick. Called before [method tick].
-##
-## [b]Health as a fraction, not as a number.[/b] See [DotNpcDirectorStress]: a game that
-## had to report damage would have to remember to from every damage path it has, and the
-## one it forgets is the one that matters.
+## One player's position and health this tick, called before [method tick]. Health as a fraction, not damage
+## reports: see [DotNpcDirectorStress]; the damage path a game forgets to report from is the one that matters.
 func report_player(id: StringName, position: Vector3, health_fraction: float) -> void:
 	if not _players.has(id):
 		_players[id] = DotNpcDirectorStress.make(id)
@@ -118,11 +117,8 @@ func report_player(id: StringName, position: Vector3, health_fraction: float) ->
 	(_players[id] as DotNpcDirectorStress).health_fraction = health_fraction
 
 
-## Forgets a player. Called when one disconnects or is spectating.
-##
-## Their stress goes with them, which is right: a director must not keep building toward
-## a peak on behalf of somebody who has left, and it must not be stuck in a relax waiting
-## for them to travel.
+## Forgets a player who disconnected or is spectating, stress and all: a director must not build a peak for
+## somebody who left, nor sit in a relax waiting for them to travel.
 func forget_player(id: StringName) -> bool:
 	_skills.erase(id)
 	return _players.erase(id)
@@ -155,12 +151,9 @@ func player_count() -> int:
 	return _players.size()
 
 
-## How far the least-travelled player has come since the relax began.
-##
-## [b]The least, not the most.[/b] The relax ends when the PARTY has moved on; one
-## player scouting ahead while the rest hold a door has not moved the party anywhere,
-## and ending the relax on their travel drops a wave on three people who are standing
-## still.
+## How far the least-travelled player has come since the relax began. The least, not the most: one player
+## scouting ahead while the rest hold a door has not moved the party, and ending the relax then drops a wave on three
+## people standing still.
 func party_travel() -> float:
 	if _players.is_empty():
 		return 0.0
