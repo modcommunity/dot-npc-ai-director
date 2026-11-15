@@ -34,7 +34,8 @@ ln -s ../../dot-npc/addons/dot_npc addons/dot_npc
 | `addons/dot_npc_ai_director/tools/waves_check.gd` | the headless validator for every wave set of a game |
 | `cfg/addons/dot_npc_ai_director/waves/hold.yml` | the neutral default set a game `extends` |
 | `addons/dot_npc_ai_director/dot_npc_ai_director_api.gd` | the API level (`DotAddonApi`): 4 since `DotWaveSet` |
-| `addons/dot_npc_ai_director/runtime/dot_npc_director.gd` | `DotNpcDirector`: the phase cycle, placement, reclaiming, `set_spawn_points_from_nav` |
+| `addons/dot_npc_ai_director/runtime/dot_npc_director.gd` | `DotNpcDirector`: the phase cycle, placement, reclaiming |
+| `addons/dot_npc_ai_director/runtime/dot_npc_director_inputs.gd` | Its parent part: spawn points and sites (`set_sites`, `set_spawn_points_from_nav`), player reports and skill records |
 | `examples/director_selftest.tscn` | the suite; non-zero on failure |
 | `examples/director_adapt_selftest.tscn` | the skill, difficulty and specials suite |
 | `examples/waves_selftest.tscn` | the wave-set suite (fixtures in `fixtures/cfg*`) |

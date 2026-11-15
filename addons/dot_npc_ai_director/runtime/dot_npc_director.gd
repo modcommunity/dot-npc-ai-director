@@ -1,6 +1,6 @@
 @tool
 class_name DotNpcDirector
-extends Node
+extends "dot_npc_director_inputs.gd"
 
 ## Population and pacing. The co-operative survival shooters' director, over a
 ## [DotNpcSpawner].
@@ -30,7 +30,6 @@ extends Node
 ## director.tick(delta)
 ## [/codeblock]
 
-const CHANNEL := "npc.director"
 
 ## The pacing moved on.
 signal phase_changed(from: Phase, to: Phase)
@@ -80,34 +79,6 @@ var spawner: DotNpcSpawner = null
 ## The map's critical path. Null or empty for an arena.
 var flow: DotNpcDirectorFlow = null
 
-## Candidate spawn positions, in world space. Usually a map's nav data points.
-##
-## [b]Given rather than derived, because "where may something appear" is a level design
-## question.[/b] A navigable point is not automatically a legal spawn: a game wants its
-## horde coming out of the dark corridor rather than out of the safe room, and only the
-## map knows which is which. `DotNpcNavData.points` is a reasonable default and a game
-## that wants better passes better.
-var spawn_points: PackedVector3Array = PackedVector3Array()
-
-## Optional per-point rules, parallel to [member spawn_points]; see [method set_sites].
-var _sites: Array = []
-
-## Called as [code]site_alive_fn.call(site) -> int[/code]: how many of this site's NPCs are
-## alive, for a site's [code]max_alive[/code]. Unset means max_alive is not enforced.
-var site_alive_fn: Callable = Callable()
-
-## Called as [code]site_filter.call(site, point) -> bool[/code] after the built-in rules;
-## false vetoes the site. For a game's own rule (a team, a class, a door state).
-var site_filter: Callable = Callable()
-
-## The site the last successful [method choose_spawn_point] used, or null.
-var last_site: Variant = null
-
-## Score, in metres of preference, that one unit of a site's [code]weight[/code] above 1 is worth.
-const SITE_WEIGHT_METRES := 10.0
-
-## Player id -> DotNpcDirectorStress.
-var _players: Dictionary = {}
 
 var _phase: Phase = Phase.BUILD_UP
 
@@ -125,52 +96,12 @@ var _last_reclaim_at: float = -1000.0
 var _behind_spawns: int = 0
 var _total_spawns: int = 0
 
-## Player id -> DotNpcDirectorSkill. Empty while skill is off.
-var _skills: Dictionary = {}
 
 var _specials := DotNpcDirectorSpecials.new()
 
 var wave_count: int = 0
 var spawn_count: int = 0
 var refused_placements: int = 0
-
-
-## Takes authored spawn sites with per-site rules instead of bare points.
-##
-## [b]Duck-typed, so this addon does not depend on dot-spawn.[/b] A site is an object with
-## properties, or a Dictionary with keys, named [code]position[/code] (Vector3, required),
-## [code]enabled[/code], [code]weight[/code] (0 vetoes, above 1 is preferred),
-## [code]max_alive[/code] (0 is no limit; needs [member site_alive_fn]), [code]phases[/code]
-## (lower-case phase names such as [code]relax[/code]; empty is any),
-## [code]sight[/code] ([code]hidden_from_players[/code], [code]visible_to_players[/code] or
-## [code]any[/code]) and [code]min_player_distance[/code] / [code]max_player_distance[/code]
-## (above 0 replace the rules' band for that site). A DotSpawnPointDef fits as it is.
-## Returns how many sites were kept (those with a Vector3 position).
-func set_sites(sites: Array) -> int:
-	var kept: Array = []
-	var points := PackedVector3Array()
-
-	for site in sites:
-		var position: Variant = _site_get(site, "position", null)
-
-		if position is Vector3:
-			kept.append(site)
-			points.append(position)
-
-	_sites = kept
-	spawn_points = points
-	return kept.size()
-
-
-static func _site_get(site: Variant, key: String, fallback: Variant) -> Variant:
-	if site is Dictionary:
-		return (site as Dictionary).get(key, fallback)
-
-	if site is Object:
-		var value: Variant = (site as Object).get(key)
-		return fallback if value == null else value
-
-	return fallback
 
 
 ## Whether [param site] is allowed in the current phase and by its cap and filter.
@@ -205,29 +136,6 @@ func _site_allows(site: Variant) -> bool:
 	return true
 
 
-## Fills [member spawn_points] from a map's navigation, thinned.
-##
-## The convenience the field's own documentation has always pointed at: a navigable
-## point is the reasonable default and every game was writing this loop. Still an
-## explicit call rather than something the director does on its own, because which
-## points are [i]legal[/i] spawns is a level design question and a game that wants
-## better still passes better.
-##
-## [b][param minimum_spacing] is not a nicety.[/b] [method choose_spawn_point] walks
-## every candidate and, for each one inside the distance band, asks whether a player
-## can see it — which is a raycast. A two-metre grid over a modest map is a few
-## thousand points, so an unthinned list is a few thousand raycasts per wave, several
-## times a minute, on the server. Eight metres is about a room.
-##
-## [param filter] excludes what the map says an NPC should not be standing on:
-## `DotNpcNavFilter.walking_only()` keeps a horde out of the crouch tunnels, and a
-## filter with `exclude_flags` set to `AVOID` keeps it off the ledges.
-##
-## Returns how many points were kept.
-func set_spawn_points_from_nav(
-	nav: DotNpcNavData,
-	minimum_spacing: float = 8.0,
-	filter: DotNpcNavFilter = null
 ) -> int:
 	spawn_points = PackedVector3Array()
 
@@ -298,51 +206,6 @@ func _ready() -> void:
 
 # --- What the game tells it ---------------------------------------------------
 
-## One player's position and health this tick. Called before [method tick].
-##
-## [b]Health as a fraction, not as a number.[/b] See [DotNpcDirectorStress]: a game that
-## had to report damage would have to remember to from every damage path it has, and the
-## one it forgets is the one that matters.
-func report_player(id: StringName, position: Vector3, health_fraction: float) -> void:
-	if not _players.has(id):
-		_players[id] = DotNpcDirectorStress.make(id)
-
-	(_players[id] as DotNpcDirectorStress).position = position
-	(_players[id] as DotNpcDirectorStress).health_fraction = health_fraction
-
-
-## Forgets a player. Called when one disconnects or is spectating.
-##
-## Their stress goes with them, which is right: a director must not keep building toward
-## a peak on behalf of somebody who has left, and it must not be stuck in a relax waiting
-## for them to travel.
-func forget_player(id: StringName) -> bool:
-	_skills.erase(id)
-	return _players.erase(id)
-
-
-## A player died. Feeds the skill estimate; no effect while skill is off.
-func report_death(id: StringName) -> void:
-	_skill_of(id).add_death()
-
-
-## A player revived a teammate. Feeds the skill estimate.
-func report_revive(id: StringName) -> void:
-	_skill_of(id).add_revive()
-
-
-## A player killed an enemy. Feeds the skill estimate (weighted 0 by default).
-func report_kill(id: StringName) -> void:
-	_skill_of(id).add_kill()
-
-
-## The skill record of a player, made on first use.
-func _skill_of(id: StringName) -> DotNpcDirectorSkill:
-	if not _skills.has(id):
-		_skills[id] = DotNpcDirectorSkill.new()
-
-	return _skills[id]
-
 
 ## The multiplier on one player's share of the peak: 1.0 while skill is off or unknown.
 func skill_multiplier(id: StringName) -> float:
@@ -365,10 +228,6 @@ func enemy_damage_multiplier() -> float:
 ## Specials that may still be spawned right now by the budget alone.
 func special_budget() -> float:
 	return _specials.budget
-
-
-func player_count() -> int:
-	return _players.size()
 
 
 # --- The tick -----------------------------------------------------------------
@@ -440,24 +299,6 @@ func stress() -> float:
 		total += value
 
 	return worst if rules.stress_from_worst_player else total / float(_players.size())
-
-
-## How far the least-travelled player has come since the relax began.
-##
-## [b]The least, not the most.[/b] The relax ends when the PARTY has moved on; one
-## player scouting ahead while the rest hold a door has not moved the party anywhere,
-## and ending the relax on their travel drops a wave on three people who are standing
-## still.
-func party_travel() -> float:
-	if _players.is_empty():
-		return 0.0
-
-	var least := INF
-
-	for id in _players:
-		least = minf(least, (_players[id] as DotNpcDirectorStress).travelled)
-
-	return least
 
 
 func _advance_phase() -> void:
@@ -682,66 +523,18 @@ func choose_spawn_point() -> DotResult:
 	var best := Vector3.ZERO
 	var best_score := -INF
 	var found := false
-	var best_is_behind := false
 	var best_site: Variant = null
 	var use_sites := not _sites.is_empty() and _sites.size() == spawn_points.size()
 
 	for index in spawn_points.size():
 		var point := spawn_points[index]
 		var site: Variant = _sites[index] if use_sites else null
-		var nearest := _distance_to_nearest_player(point)
-		var min_distance := rules.spawn_min_distance
-		var max_distance := rules.spawn_max_distance
-		var sight := "any"
-
-		if use_sites:
-			if not _site_allows(site):
-				continue
-
-			var site_min := float(_site_get(site, "min_player_distance", 0.0))
-			var site_max := float(_site_get(site, "max_player_distance", 0.0))
-			min_distance = site_min if site_min > 0.0 else min_distance
-			max_distance = site_max if site_max > 0.0 else max_distance
-			sight = String(_site_get(site, "sight", "any"))
-
-		if nearest < min_distance or nearest > max_distance:
-			continue
-
-		if sight == "any":
-			if rules.spawn_out_of_sight and _is_visible_to_any_player(point):
-				continue
-		elif _is_visible_to_any_player(point) != (sight == "visible_to_players"):
-			continue
-
-		var behind := false
-		var score := 0.0
-
-		if flow != null and flow.has_route():
-			var point_flow := flow.flow_of(point)
-			behind = point_flow < _party_flow()
-
-			if behind and not allow_behind:
-				continue
-
-			# Closest to the preferred flow position wins. A director that simply took
-			# the furthest-ahead point spawns everything at the end of the map, where it
-			# waits for the party for two minutes and then arrives as one enormous wave.
-			score = -absf(point_flow - ahead_of)
-		else:
-			# No route: prefer the middle of the legal band. In an arena "ahead" has no
-			# meaning and the useful preference is "not right on top of them, not so far
-			# away it never arrives".
-			var middle := (min_distance + max_distance) * 0.5
-			score = -absf(nearest - middle)
-
-		if use_sites:
-			score += (float(_site_get(site, "weight", 1.0)) - 1.0) * SITE_WEIGHT_METRES
+		var score := _spawn_score(point, site, use_sites, allow_behind, ahead_of)
 
 		if score > best_score:
 			best_score = score
 			best = point
 			best_site = site
-			best_is_behind = behind
 			found = true
 
 	if not found:
@@ -751,11 +544,63 @@ func choose_spawn_point() -> DotResult:
 			"%d considered" % spawn_points.size()
 		)
 
-	if best_is_behind:
+	# Asked again of the winner alone, exactly as [method _spawn_score] asked it.
+	if flow != null and flow.has_route() and flow.flow_of(best) < _party_flow():
 		_behind_spawns += 1
 
 	last_site = best_site
 	return DotResult.success(best)
+
+
+## How much [method choose_spawn_point] wants [param point] (higher is better), or -INF where
+## the rules or its [param site] forbid it.
+func _spawn_score(point: Vector3, site: Variant, use_sites: bool, allow_behind: bool, ahead_of: float) -> float:
+	var nearest := _distance_to_nearest_player(point)
+	var min_distance := rules.spawn_min_distance
+	var max_distance := rules.spawn_max_distance
+	var sight := "any"
+
+	if use_sites:
+		if not _site_allows(site):
+			return -INF
+
+		var site_min := float(_site_get(site, "min_player_distance", 0.0))
+		var site_max := float(_site_get(site, "max_player_distance", 0.0))
+		min_distance = site_min if site_min > 0.0 else min_distance
+		max_distance = site_max if site_max > 0.0 else max_distance
+		sight = String(_site_get(site, "sight", "any"))
+
+	if nearest < min_distance or nearest > max_distance:
+		return -INF
+
+	if sight == "any":
+		if rules.spawn_out_of_sight and _is_visible_to_any_player(point):
+			return -INF
+	elif _is_visible_to_any_player(point) != (sight == "visible_to_players"):
+		return -INF
+
+	var score := 0.0
+
+	if flow != null and flow.has_route():
+		var point_flow := flow.flow_of(point)
+		if point_flow < _party_flow() and not allow_behind:
+			return -INF
+
+		# Closest to the preferred flow position wins. A director that simply took
+		# the furthest-ahead point spawns everything at the end of the map, where it
+		# waits for the party for two minutes and then arrives as one enormous wave.
+		score = -absf(point_flow - ahead_of)
+	else:
+		# No route: prefer the middle of the legal band. In an arena "ahead" has no
+		# meaning and the useful preference is "not right on top of them, not so far
+		# away it never arrives".
+		var middle := (min_distance + max_distance) * 0.5
+		score = -absf(nearest - middle)
+
+	if use_sites:
+		score += (float(_site_get(site, "weight", 1.0)) - 1.0) * SITE_WEIGHT_METRES
+
+	return score
 
 
 func _party_flow() -> float:
@@ -772,15 +617,6 @@ func _party_flow() -> float:
 
 func _wanted_flow() -> float:
 	return _party_flow() + rules.spawn_ahead
-
-
-func _distance_to_nearest_player(point: Vector3) -> float:
-	var nearest := INF
-
-	for id in _players:
-		nearest = minf(nearest, point.distance_to((_players[id] as DotNpcDirectorStress).position))
-
-	return nearest
 
 
 ## Whether any player has line of sight to [param point].

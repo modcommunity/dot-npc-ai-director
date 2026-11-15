@@ -1,10 +1,17 @@
 extends Node
 
-## Fixtures the director self-test builds its world from: catalogue, spawner, corridor, director, rules.
+## Fixtures the director self-test builds its world from: catalogue, spawner, corridor, director, rules;
+## and its pass/fail counting.
 
 const BODY := "res://fixtures/npc_body.tscn"
 
 var _world: Node3D = null
+
+var _passed := 0
+var _failed := 0
+var _failures := PackedStringArray()
+var _entered := 0
+var _completed := 0
 
 
 func _catalogue() -> DotNpcCatalogue:
@@ -70,3 +77,24 @@ func _rules() -> DotNpcDirectorRules:
 	rules.spawn_out_of_sight = false
 	rules.spawn_interval = 0.0
 	return rules
+
+
+func _section(title: String) -> void:
+	_entered += 1
+	print(title)
+
+
+## A section reached its last line. See [constant SECTIONS].
+func _done() -> void:
+	_completed += 1
+
+
+func _check(ok: bool, what: String, detail: String = "") -> void:
+	if ok:
+		_passed += 1
+		print("  ok    %s" % what)
+	else:
+		_failed += 1
+		var line := what if detail == "" else "%s (%s)" % [what, detail]
+		_failures.append(line)
+		print("  FAIL  %s" % line)
