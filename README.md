@@ -89,7 +89,7 @@ director.rules = rules
 ```
 
 ```bash
-DOT_DIRECTOR_PEAK_PER_PLAYER=8 godot --headless -- --director-relax-seconds=45
+GS_DIRECTOR_PEAK_PER_PLAYER=8 godot --headless -- --director-relax-seconds=45
 ```
 
 Populations are per player, so the same rules suit one player or many.
