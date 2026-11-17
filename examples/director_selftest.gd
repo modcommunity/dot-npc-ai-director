@@ -415,7 +415,7 @@ func _test_spawn_points_from_nav() -> void:
 		DotNpcNavData.AREA_GROUND, DotNpcNavData.Flag.CROUCH
 	)
 
-	var nav := builder.build(&"arena", "digest")
+	var nav := builder.build(&"fc", "digest")
 	var director := _director(_spawner())
 
 	var kept := director.set_spawn_points_from_nav(nav, 8.0)
