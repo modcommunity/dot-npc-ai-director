@@ -1,4 +1,4 @@
-[![NPC AI Director - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/229-dot-npc-ai-director)
+[![NPC AI Director - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/33-gs-npc-ai-director)
 
 Decides how many enemies are alive and where new ones appear, based on how hard the players are having it. It also has a wave, night and clock scheduler for games where the players hold a place.
 
