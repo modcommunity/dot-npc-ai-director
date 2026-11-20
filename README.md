@@ -1,3 +1,5 @@
+[![dot-npc-ai-director - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/229-dot-npc-ai-director)
+
 Decides how many enemies are alive and where new ones appear, based on how hard the players are having it. It also has a wave, night and clock scheduler for games where the players hold a place.
 
 Part of the [**Gamespice**](https://gamespice.net) collection: modular, MIT-licensed building blocks for games on the Gamespice platform (only the TMC website back end is closed). It was built with Claude Code and its headless suites pass, but little of it has met real players yet, so expect rough edges and please report what you find.
