@@ -6,7 +6,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 **The distributable is `addons/dot_npc_ai_director/`.** It depends on dot-core and dot-npc (both symlinked, `.gitignore`). Not on dot-npc-ai: a director decides *how many* and *where*, and what each NPC does when it gets there is a brain's business. A game can run this over dot-npc's own `DotNpcBrain` and never install a behaviour tree.
 
-Also requires **dot-profile** (`DotProfileSet`, `DotProfile`, `DotProfileRuntime`, split from dot-core): link `addons/dot_profile` next to `addons/dot_core`.
+Also requires **GameSpice Profile** (`DotProfileSet`, `DotProfile`, `DotProfileRuntime`, split from GameSpice Core): link `addons/dot_profile` next to `addons/dot_core`.
 
 ```bash
 ln -s ../../dot-core/addons/dot_core addons/dot_core

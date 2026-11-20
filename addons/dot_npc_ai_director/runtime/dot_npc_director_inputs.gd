@@ -35,7 +35,7 @@ var _players: Dictionary = {}
 var _skills: Dictionary = {}
 
 
-## Takes authored sites (duck-typed objects or Dictionaries, so no dot-spawn dependency; a DotSpawnPointDef fits) with
+## Takes authored sites (duck-typed objects or Dictionaries, so no GameSpice Spawn dependency; a DotSpawnPointDef fits) with
 ## [code]position[/code] (Vector3, required), [code]enabled[/code], [code]weight[/code] (0 vetoes, above 1 preferred), [code]max_alive[/code] (0 none; needs [member site_alive_fn]), [code]phases[/code] (lower-case, empty is any),
 ## [code]sight[/code] (hidden_from_players / visible_to_players / any), [code]min_player_distance[/code] / [code]max_player_distance[/code] (above 0 replace the band). Returns how many had a Vector3 position.
 func set_sites(sites: Array) -> int:

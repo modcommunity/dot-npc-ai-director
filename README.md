@@ -15,13 +15,13 @@ The director loops through four phases:
 
 Pressure is **stress**. It rises when a player loses health or has enemies close by, and drains when nothing happens. A struggling team gets a break sooner, and a team doing well gets more. There is no difficulty setting unless you turn on the optional skill, difficulty and specials rules (off by default, see docs/design.md).
 
-The director only decides how many and where. What an enemy does is up to its brain ([dot-npc-ai](https://github.com/gamespice-platform/npc-ai) or your own).
+The director only decides how many and where. What an enemy does is up to its brain ([GameSpice NPC AI](https://github.com/gamespice-platform/npc-ai) or your own).
 
 ## Install
 
-You need [Godot 4.7](https://godotengine.org/download). [dot-bootstrap](https://github.com/gamespice-platform/bootstrap) clones every project and links the addons for you.
+You need [Godot 4.7](https://godotengine.org/download). [GameSpice Bootstrap](https://github.com/gamespice-platform/bootstrap) clones every project and links the addons for you.
 
-By hand: copy `addons/dot_npc_ai_director/`, [dot-npc](https://github.com/gamespice-platform/npc)'s `addons/dot_npc/` and [dot-core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable them in **Project > Project Settings > Plugins**.
+By hand: copy `addons/dot_npc_ai_director/`, [GameSpice NPC](https://github.com/gamespice-platform/npc)'s `addons/dot_npc/` and [GameSpice Core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable them in **Project > Project Settings > Plugins**.
 
 ## Use
 

@@ -57,7 +57,7 @@ It takes a `DotNpcNavFilter` for the same reason a path does: `DotNpcNavFilter.w
 
 ## Reclaiming is along the route, not by distance
 
-Distance alone reclaims the wave waiting in the room the party is about to walk into, which is the wave that was the whole point. dot-npc's own `reclaim_distance` (in `DotNpcLimits`) is the safety net underneath this, and it stays on.
+Distance alone reclaims the wave waiting in the room the party is about to walk into, which is the wave that was the whole point. GameSpice NPC's own `reclaim_distance` (in `DotNpcLimits`) is the safety net underneath this, and it stays on.
 
 The director only reclaims what it spawned (`owner_id == &"director"`), because a scripted set piece is not its to tidy away, and it never takes an NPC that has a target. `reclaim_interval` of 0 means every tick, as `spawn_interval` does in `DotNpcLimits`.
 
@@ -69,7 +69,7 @@ The population list is flat and repetition is the weighting: `[&"zombie", &"zomb
 
 ## A 2D game drives this unchanged
 
-Everything here (the stress, the phase, the population target, the travel estimate, the scoring of a spawn point) is arithmetic on points in dot-npc's own plane, and dot-npc's plane is XZ with a vertical that a 2D world never moves. So the only line that has to know which dimension it is in is the one that spawns something, and it asks the spawner: `DotNpcSpawner.two_dimensional` routes it through `spawn_2d`.
+Everything here (the stress, the phase, the population target, the travel estimate, the scoring of a spawn point) is arithmetic on points in GameSpice NPC's own plane, and GameSpice NPC's plane is XZ with a vertical that a 2D world never moves. So the only line that has to know which dimension it is in is the one that spawns something, and it asks the spawner: `DotNpcSpawner.two_dimensional` routes it through `spawn_2d`.
 
 That is deliberately one branch in one function rather than a flag on this class. A director serves a spawner and a spawner serves a world; asking the thing that knows is cheaper than keeping a second copy of the answer, and this family's most repeated bug is two copies of one list.
 
@@ -83,7 +83,7 @@ That is deliberately one branch in one function rather than a flag on this class
 | Where "ahead" is | `DotNpcDirectorFlow`, from the map's critical path |
 | What the players are experiencing | `report_player(id, position, health_fraction)` |
 | Whether pacing runs at all | `DotNpcDirector.enabled`, for a scripted set piece |
-| What a spawned NPC then does | its brain: dot-npc's, or dot-npc-ai's |
+| What a spawned NPC then does | its brain: GameSpice NPC's, or GameSpice NPC AI's |
 
 ## A hold-out is a schedule, not a cycle
 

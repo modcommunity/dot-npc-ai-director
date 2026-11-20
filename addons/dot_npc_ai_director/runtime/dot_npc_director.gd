@@ -418,7 +418,7 @@ func _spawn_toward_target() -> void:
 
 		# [b]The spawner says which dimension its world is, and this is the only place the
 		# director cares.[/b] Everything above — the stress, the phase, the population
-		# target, the scoring of a spawn point — is arithmetic on points in dot-npc's own
+		# target, the scoring of a spawn point — is arithmetic on points in GameSpice NPC's own
 		# plane and is identical either way. A 2D game forking this file to change one
 		# call would be forking the whole director to avoid a `Vector3`.
 		var made: DotNpcInstance = (
@@ -636,7 +636,7 @@ func _is_visible_to_any_player(point: Vector3) -> bool:
 ##
 ## [b]Behind along the ROUTE, not merely far away.[/b] Distance alone reclaims the wave
 ## waiting in the room the party is about to walk into, which is the wave that was the
-## whole point. dot-npc's own reclaim is the distance-based safety net underneath this.
+## whole point. GameSpice NPC's own reclaim is the distance-based safety net underneath this.
 func _reclaim_behind() -> void:
 	if flow == null or not flow.has_route() or _players.is_empty():
 		return

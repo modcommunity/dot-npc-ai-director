@@ -11,7 +11,7 @@ extends RefCounted
 ##
 ## [b]The route is the game's, and it is cheap to give.[/b] A campaign map already knows
 ## its own critical path: it is the line the level designer built the fight along, and in
-## this family's code-built maps it is a handful of constants. dot-map's catalogue is
+## this family's code-built maps it is a handful of constants. GameSpice Map's catalogue is
 ## where a game would keep it.
 ##
 ## A flat route — no route at all — degrades to "distance from the party", which is what

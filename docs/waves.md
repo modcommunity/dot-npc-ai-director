@@ -8,7 +8,7 @@ A survival server owner should be able to change what comes, how many, how fast,
 
 | Piece | Owner | Why |
 | --- | --- | --- |
-| Tiers, `extends:`, `extra:`, env/cli override, validation of types | dot-core `DotProfileSet` | one layering for the whole family |
+| Tiers, `extends:`, `extra:`, env/cli override, validation of types | GameSpice Core `DotProfileSet` | one layering for the whole family |
 | `DotWaveSet` (schema, id lookup, per-wave resolution, validation across files) and `DotNpcDirectorWaves.from_profile()` | **dot-npc-ai-director** (recommended) | it already owns the schedule and the budget/skill/special rules; a new addon would only wrap its one class |
 | NPC profile ids (`cfg/game/<game>/npc/<id>.yml`) | dot-npc (`npc` kind) | the director holds ids, never builds an NPC |
 | Which wave set a map plays, difficulty, rotation | dot-map `maps.yml` | rotation is already there; the director must not know about maps |
@@ -78,7 +78,7 @@ Difficulty is a named preset in the set, picked by the map entry; it multiplies 
 
 ## Maps and rotation
 
-dot-map's rotation file says which maps rotate. Add one optional field to a rotation entry, resolved by the same `defaults:` / `games:` layers:
+GameSpice Map's rotation file says which maps rotate. Add one optional field to a rotation entry, resolved by the same `defaults:` / `games:` layers:
 
 ```yaml
 # cfg/addons/dot_map/maps.yml (rotation.md names it cfg/maps.yml; confirm which is current)
@@ -112,7 +112,7 @@ Round start: game resolves the set, calls `DotNpcDirectorWaves.from_profile(prof
 
 1. Add `cfg/game/zombie-zone/npc/zz_bloat_king.yml` (health, speed, damage, `brain:` an existing brain, `model:` an existing scene, `extends: zz_brute` for a quick variant).
 2. Name it in `pool`, `specials` or `boss` of a wave, in the game's set or in `cfg/server/game/<game>/waves/`.
-3. Start the map. A brain or a model that does not exist yet needs code or an asset; a variant of what exists never does. The existing brains take their tuning from the NPC profile (this is the dot-npc profile work, a prerequisite).
+3. Start the map. A brain or a model that does not exist yet needs code or an asset; a variant of what exists never does. The existing brains take their tuning from the NPC profile (this is the GameSpice NPC profile work, a prerequisite).
 
 ## Validation
 
@@ -121,16 +121,16 @@ At load and again at match start, returned as a `DotResult` with one aggregated 
 ## Test plan
 
 - Director suite (numbers only, no engine NPCs): tier merge order, range expansion and `last` precedence, formula against explicit waves, difficulty multipliers, every validation failure above gets one case, `from_profile` reproduces today's `DotNpcDirectorWaves` defaults exactly (regression guard for the 10-wave school numbers), `+id` pool add, env override of a scalar, wave entries refusing env.
-- dot-map suite: rotation entry with a mapping parses, a bare string still does, glob entry carries settings, precedence of `sv_waves` > entry > map doc, missing set falls through.
+- GameSpice Map suite: rotation entry with a mapping parses, a bare string still does, glob entry carries settings, precedence of `sv_waves` > entry > map doc, missing set falls through.
 - ZZ: `headless_survival` plays a three-wave set from yml and a server-tier override of wave 2, asserts the spawned ids and counts equal the yml, and that a mutant added only as an npc yml spawns. A render of the HUD wave title for an announce line. Existing ZZ suites stay green with the default set equal to today's numbers.
 - Final wave cleared then rotation: a session test that `finished` leads to `map_over` and the next entry.
 
 ## Tasks, in order
 
 1. dot-core: `DotProfile` lands (in progress), including dictionary merge and range-safe keys; no work here beyond confirming a `waves` kind needs nothing special.
-2. dot-npc: `npc` profile kind with `brain:` and `model:` fields, if not already there (blocks "no code change").
+2. GameSpice NPC: `npc` profile kind with `brain:` and `model:` fields, if not already there (blocks "no code change").
 3. dot-npc-ai-director: `DotWaveSet`, `from_profile`, `WaveSpec`, validation, `waves_check`, suite, API level bump, default `hold.yml`.
-4. dot-map: rotation entry mapping form, `DotMapDef.play`, `sv_waves`, rotation docs and suite.
+4. GameSpice Map: rotation entry mapping form, `DotMapDef.play`, `sv_waves`, rotation docs and suite.
 5. game-zombie-zone: `cfg/game/zombie-zone/waves/*.yml` carrying today's numbers, `ZzSurvival` reads the set, `wave_scale_by_map` and the survival cvars become server-tier defaults, `extra.zz`, mutant demo, survival suite.
 6. Other hold-out games adopt it; twists to yml; an in-game editor is out of scope (files only).
 
@@ -155,7 +155,7 @@ var res := DotNpcDirectorWaves.from_profile(profiles.load_profile("school_hold")
 
 Choices where the design was open (Christian has not answered; change them here and in `dot_wave_set.gd` together):
 
-- The YAML reader reads one-line flow mappings (`{a: 1}`) from dot-core v0.1.46; the examples above stay in block style, which an older dot-core also reads.
+- The YAML reader reads one-line flow mappings (`{a: 1}`) from GameSpice Core v0.1.46; the examples above stay in block style, which an older GameSpice Core also reads.
 - `cycle` sets take `nights:` and every other style takes `waves:`; the wrong one is an error, not ignored. `seconds` is the night length (cycle) or the whole hold (clock, 0 is endless); `twilight` is the dawn and dusk ramp.
 - A cycle or clock set has no head count: `spec.size` is 0 and the game reads the schedule's `strength()`.
 - Merge order for one wave: the set's values, then every covering range from widest to narrowest, then the number, then `last`. `last` is the final wave: `count`, or 1 for a clock. A dictionary key (`specials`, `extra`) merges key by key across tiers, so a server range that sets one special keeps the game's others; a `pool` replaces, unless every key starts with `+`, which adds.
@@ -168,4 +168,4 @@ Choices where the design was open (Christian has not answered; change them here 
 - `waves_check` lists a set's layers under each `ok` line. Run it as `godot --headless --path . --script res://addons/dot_npc_ai_director/tools/waves_check.gd -- --game=<game> [--roots=a,b] [--check-npcs]`; it builds each set once per difficulty it names and ends with `WAVES_CHECK sets=N failed=M`.
 - The shipped default is `cfg/addons/dot_npc_ai_director/waves/hold.yml`; a game's roots must contain it (copy `cfg/` into the pack) or its sets cannot `extends: hold`.
 - `examples/zombie-zone/game/game-zombie-zone/waves/default.yml` is the drafted game layer carrying today's Zombie Zone numbers (`waves_check` passes on it with `--roots=res://cfg,res://examples/zombie-zone`); the game copies it to `cfg/game/game-zombie-zone/waves/`.
-- The rotation tie is built: dot-core `DotRotationSpec` mapping entries, dot-map `DotMapDef.play` and `play_candidates`; game-zombie-zone reads them with `sv_waves` (`game/zz_wave_sets.gd`).
+- The rotation tie is built: GameSpice Core `DotRotationSpec` mapping entries, GameSpice Map `DotMapDef.play` and `play_candidates`; game-zombie-zone reads them with `sv_waves` (`game/zz_wave_sets.gd`).
